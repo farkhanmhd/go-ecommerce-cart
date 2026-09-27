@@ -1,0 +1,2088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OpenAPI Spec Builder (Scalar UI)</title>
+
+  <!-- Scalar API Reference -->
+  <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference@latest"></script>
+  <!-- js-yaml for YAML export/import -->
+  <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #0d0f17;
+      --surface: #141724;
+      --surface2: #1e2235;
+      --surface3: #272c44;
+      --border: #282d44;
+      --border-subtle: #1f2337;
+      --text: #e2e8f0;
+      --text-dim: #8b92b0;
+      --accent: #6366f1;
+      --accent-hover: #818cf8;
+      --accent-light: rgba(99, 102, 241, 0.15);
+      --danger: #ef4444;
+      --danger-hover: #f87171;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --radius: 8px;
+      --radius-sm: 6px;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      --mono: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, monospace;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Top Bar ── */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      height: 48px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      z-index: 100;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .brand-title {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #fff;
+    }
+
+    .brand-badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: var(--accent-light);
+      color: var(--accent-hover);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface2);
+      color: var(--text);
+      font-size: 12px;
+      font-family: var(--font);
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .15s ease;
+      white-space: nowrap;
+    }
+    .btn:hover { border-color: var(--accent); color: var(--accent-hover); }
+    .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: #fff; }
+    .btn-danger { border-color: var(--danger); color: var(--danger); }
+    .btn-danger:hover { background: var(--danger); color: #fff; }
+    .btn-sm { padding: 4px 8px; font-size: 11px; }
+    .btn-icon { padding: 5px 7px; line-height: 1; }
+
+    /* ── Main Layout (Scalar Fullscreen + Drawer Overlay) ── */
+    .app-container {
+      position: relative;
+      flex: 1;
+      height: calc(100vh - 48px);
+      overflow: hidden;
+      display: flex;
+    }
+
+    /* Scalar Viewport */
+    .scalar-viewport {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    #scalar-container {
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+    }
+
+    /* ── Remove inner borders on Scalar UI ── */
+    #scalar-container,
+    #scalar-container * {
+      --scalar-border-color: transparent !important;
+      --theme-border-color: transparent !important;
+    }
+
+    #scalar-container .scalar-card,
+    #scalar-container .scalar-card-content,
+    #scalar-container .scalar-api-reference,
+    #scalar-container .scalar-card-section,
+    #scalar-container .sidebar,
+    #scalar-container aside,
+    #scalar-container .scalar-header,
+    #scalar-container .border,
+    #scalar-container .border-b,
+    #scalar-container .border-t,
+    #scalar-container .border-r,
+    #scalar-container .border-l,
+    #scalar-container [class*="border"] {
+      border-color: transparent !important;
+    }
+
+    /* Floating Action Bar Inside Scalar */
+    .scalar-inline-bar {
+      position: absolute;
+      top: 14px;
+      right: 18px;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(20, 23, 36, 0.85);
+      backdrop-filter: blur(12px);
+      padding: 6px 10px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+      transition: all 0.2s ease;
+    }
+
+    .scalar-inline-bar:hover {
+      border-color: var(--accent);
+      box-shadow: 0 6px 24px rgba(99, 102, 241, 0.25);
+    }
+
+    /* Drawer Backdrop */
+    .drawer-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(2px);
+      z-index: 80;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .drawer-backdrop.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* Drawer Panel */
+    .editor-drawer {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 600px;
+      max-width: 92vw;
+      height: 100%;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      box-shadow: -10px 0 35px rgba(0, 0, 0, 0.55);
+      z-index: 90;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .editor-drawer.open {
+      transform: translateX(0);
+    }
+
+    /* ── Tabs inside Drawer ── */
+    .drawer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      padding: 0 12px;
+      height: 44px;
+      flex-shrink: 0;
+    }
+
+    .tab-list {
+      display: flex;
+      height: 100%;
+    }
+
+    .drawer-tab {
+      padding: 0 14px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-dim);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all .15s;
+      user-select: none;
+    }
+    .drawer-tab:hover { color: var(--text); }
+    .drawer-tab.active { color: var(--accent-hover); border-bottom-color: var(--accent); font-weight: 600; }
+
+    .drawer-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+    .drawer-body::-webkit-scrollbar { width: 6px; }
+    .drawer-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    .drawer-footer {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 10px 16px;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+
+    /* ── Code / JSON View ── */
+    .code-view-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    #json-editor {
+      flex: 1;
+      width: 100%;
+      background: #090b10;
+      color: #c9d1d9;
+      border: none;
+      padding: 16px;
+      font-family: var(--mono);
+      font-size: 12.5px;
+      line-height: 1.5;
+      resize: none;
+      outline: none;
+      tab-size: 2;
+    }
+
+    /* ── Form Styles ── */
+    .section {
+      margin-bottom: 16px;
+      padding: 14px;
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-size: 11.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .7px;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .field-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .field-group.full { grid-template-columns: 1fr; }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .field label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-dim);
+    }
+    .field input, .field select, .field textarea {
+      padding: 7px 10px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 12px;
+      font-family: var(--font);
+      outline: none;
+      transition: border-color .15s;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      border-color: var(--accent);
+    }
+    .field textarea {
+      resize: vertical;
+      min-height: 50px;
+      font-family: var(--mono);
+      font-size: 11px;
+    }
+
+    /* ── Cards & Accordions ── */
+    .card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      margin-bottom: 8px;
+      overflow: hidden;
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 12px;
+      cursor: pointer;
+      user-select: none;
+      background: var(--surface2);
+      transition: background .15s;
+    }
+    .card-header:hover { background: var(--surface3); }
+    .card-header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      min-width: 0;
+    }
+    .card-header-left span {
+      font-size: 12px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .card-body {
+      padding: 12px;
+      border-top: 1px solid var(--border);
+      display: none;
+      background: var(--surface);
+    }
+    .card.open .card-body { display: block; }
+
+    .method-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+    }
+    .method-get { background: #064e3b; color: #34d399; }
+    .method-post { background: #1e3a5f; color: #60a5fa; }
+    .method-put { background: #713f12; color: #fbbf24; }
+    .method-patch { background: #713f12; color: #fbbf24; }
+    .method-delete { background: #7f1d1d; color: #f87171; }
+
+    .chevron {
+      transition: transform .2s;
+      color: var(--text-dim);
+      flex-shrink: 0;
+    }
+    .card.open .chevron { transform: rotate(90deg); }
+
+    .param-row, .server-row, .tag-row, .schema-prop-row, .response-row {
+      display: grid;
+      gap: 6px;
+      align-items: end;
+      margin-bottom: 6px;
+    }
+    .param-row { grid-template-columns: 1fr 80px 90px 80px auto; }
+    .server-row { grid-template-columns: 1fr 1fr auto; }
+    .tag-row { grid-template-columns: 110px 1fr auto; }
+    .schema-prop-row { grid-template-columns: 1fr 85px 120px 110px 58px auto; }
+    .response-row { grid-template-columns: 70px 1fr auto; }
+
+    .sub-section { margin-top: 12px; }
+    .sub-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 10px 16px;
+      background: var(--surface2);
+      border: 1px solid var(--accent);
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      color: #fff;
+      z-index: 99999;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+      animation: toastIn .2s ease;
+    }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      color: var(--text-dim);
+      text-align: center;
+      gap: 4px;
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: flex; flex-direction: column; flex: 1; overflow: hidden; height: 100%; }
+  </style>
+</head>
+<body>
+
+<!-- ── Top Bar ── -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="brand-title">
+      <span>⚡ OpenAPI Spec Builder</span>
+      <span class="brand-badge">Scalar UI</span>
+    </div>
+  </div>
+
+  <div class="topbar-actions">
+    <span id="save-status-badge" style="font-size:11px;color:var(--text-dim);display:inline-flex;align-items:center;gap:4px;margin-right:6px">
+      <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--success)"></span> Saved
+    </span>
+    <button class="btn btn-sm btn-primary" onclick="manualSave()" title="Save to browser storage (Ctrl+S)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      Save
+    </button>
+    <button class="btn btn-sm" onclick="openDrawer('visual')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      Open Builder Drawer
+    </button>
+    <button class="btn btn-sm" onclick="importSpec()">📂 Import</button>
+    <button class="btn btn-sm" onclick="exportJSON()">📋 Copy JSON</button>
+    <button class="btn btn-sm" onclick="exportYAML()">📋 Copy YAML</button>
+    <button class="btn btn-sm" onclick="downloadSpec('json')">⬇ JSON</button>
+    <button class="btn btn-sm" onclick="downloadSpec('yaml')">⬇ YAML</button>
+    <button class="btn btn-sm btn-danger" onclick="resetAllData()" title="Clear all and start from scratch">🗑 Reset</button>
+  </div>
+</div>
+
+<!-- ── Main Layout ── -->
+<div class="app-container">
+
+  <!-- Scalar UI Viewport (Takes full space) -->
+  <div class="scalar-viewport">
+    <!-- Floating Scalar Action Bar -->
+    <div class="scalar-inline-bar">
+      <button class="btn btn-sm btn-primary" onclick="openDrawer('visual')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Visual Builder
+      </button>
+      <button class="btn btn-sm" onclick="openDrawer('code')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        Code / JSON
+      </button>
+    </div>
+
+    <!-- Scalar Target -->
+    <div id="scalar-container"></div>
+  </div>
+
+  <!-- Drawer Backdrop -->
+  <div class="drawer-backdrop" id="drawerBackdrop" onclick="closeDrawer()"></div>
+
+  <!-- Slide-out Drawer Panel -->
+  <div class="editor-drawer" id="editorDrawer">
+    <div class="drawer-header">
+      <div class="tab-list">
+        <div class="drawer-tab active" data-tab="visual" onclick="switchDrawerTab(this)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          Visual Builder
+        </div>
+        <div class="drawer-tab" data-tab="code" onclick="switchDrawerTab(this)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          Code / JSON
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <button class="btn btn-sm btn-icon" onclick="closeDrawer()" title="Close Drawer">✕</button>
+      </div>
+    </div>
+
+    <!-- Visual Editor -->
+    <div class="tab-content active" id="tab-visual">
+      <div class="drawer-body">
+
+        <!-- API Information -->
+        <div class="section">
+          <div class="section-header">
+            <span class="section-title">📄 API Information</span>
+          </div>
+          <div class="field-group">
+            <div class="field">
+              <label>Title</label>
+              <input type="text" id="api-title" value="" placeholder="My API" oninput="buildSpec()" />
+            </div>
+            <div class="field">
+              <label>Version</label>
+              <input type="text" id="api-version" value="1.0.0" placeholder="1.0.0" oninput="buildSpec()" />
+            </div>
+          </div>
+          <div class="field-group full">
+            <div class="field">
+              <label>Description</label>
+              <input type="text" id="api-description" value="" placeholder="API Description..." oninput="buildSpec()" />
+            </div>
+          </div>
+          <div class="field-group">
+            <div class="field">
+              <label>Contact Email</label>
+              <input type="text" id="api-contact-email" placeholder="dev@example.com" oninput="buildSpec()" />
+            </div>
+            <div class="field">
+              <label>License</label>
+              <select id="api-license" onchange="buildSpec()">
+                <option value="" selected>None</option>
+                <option value="MIT">MIT</option>
+                <option value="Apache-2.0">Apache 2.0</option>
+                <option value="BSD-3-Clause">BSD 3-Clause</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Servers -->
+        <div class="section">
+          <div class="section-header">
+            <span class="section-title">🌐 Servers</span>
+            <button class="btn btn-sm" onclick="addServer()">+ Add Server</button>
+          </div>
+          <div id="servers-list"></div>
+        </div>
+
+        <!-- Tags -->
+        <div class="section">
+          <div class="section-header">
+            <span class="section-title">🏷️ Tags</span>
+            <button class="btn btn-sm" onclick="addTag()">+ Add Tag</button>
+          </div>
+          <div id="tags-list"></div>
+        </div>
+
+        <!-- Security Schemes -->
+        <div class="section">
+          <div class="section-header">
+            <span class="section-title">🔒 Security Schemes</span>
+            <button class="btn btn-sm" onclick="addSecurityScheme()">+ Add Scheme</button>
+          </div>
+          <div id="security-list"></div>
+        </div>
+
+        <!-- Paths -->
+        <div class="section">
+          <div class="section-header">
+            <span class="section-title">🛤️ Paths & Operations</span>
+            <button class="btn btn-sm btn-primary" onclick="addPath()">+ Add Path</button>
+          </div>
+          <div id="paths-list"></div>
+        </div>
+
+        <!-- Schemas -->
+        <div class="section">
+          <div class="section-header">
+            <span class="section-title">📦 Data Schemas</span>
+            <button class="btn btn-sm" onclick="addSchema()">+ Add Schema</button>
+          </div>
+          <div id="schemas-list"></div>
+        </div>
+
+      </div>
+      <div class="drawer-footer">
+        <button class="btn btn-sm" onclick="addServer()">+ Server</button>
+        <button class="btn btn-sm" onclick="addTag()">+ Tag</button>
+        <button class="btn btn-sm" onclick="addSecurityScheme()">+ Security</button>
+        <button class="btn btn-sm btn-primary" onclick="addPath()">+ Path</button>
+        <button class="btn btn-sm" onclick="addSchema()">+ Schema</button>
+      </div>
+    </div>
+
+    <!-- Code / JSON Editor -->
+    <div class="tab-content" id="tab-code">
+      <div class="code-view-container">
+        <textarea id="json-editor" spellcheck="false" placeholder="{}"></textarea>
+        <div style="padding:8px 12px;border-top:1px solid var(--border);display:flex;gap:8px;background:var(--surface)">
+          <button class="btn btn-sm btn-primary" onclick="applyJSON()">Apply Changes to Scalar</button>
+          <button class="btn btn-sm" onclick="formatJSON()">Format</button>
+          <span id="json-status" style="font-size:11px;color:var(--text-dim);display:flex;align-items:center;margin-left:auto"></span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- Hidden file input for import -->
+<input type="file" id="file-input" accept=".json,.yaml,.yml" style="display:none" onchange="handleFileImport(event)" />
+
+<script>
+// ════════════════════════════════════════════
+// State: Clean & Empty Slate
+// ════════════════════════════════════════════
+
+let spec = {
+  openapi: '3.1.0',
+  info: {
+    title: 'New API',
+    version: '1.0.0',
+    description: ''
+  },
+  paths: {}
+};
+
+let paths = [];
+let servers = [];
+let tags = [];
+let schemas = [];
+let securitySchemes = [];
+
+let pathCounter = 0;
+let opCounter = 0;
+let serverCounter = 0;
+let tagCounter = 0;
+let schemaCounter = 0;
+let propCounter = 0;
+let paramCounter = 0;
+let responseCounter = 0;
+let securityCounter = 0;
+
+// ════════════════════════════════════════════
+// Focus preservation helpers
+// (used so re-rendering a section while a field
+// is being typed into doesn't kick focus away)
+// ════════════════════════════════════════════
+
+function getFocusedFieldId() {
+  const el = document.activeElement;
+  if (el && el.id && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT')) {
+    return {
+      id: el.id,
+      start: (typeof el.selectionStart === 'number') ? el.selectionStart : null,
+      end: (typeof el.selectionEnd === 'number') ? el.selectionEnd : null
+    };
+  }
+  return null;
+}
+
+function restoreFocusedField(info) {
+  if (!info) return;
+  const el = document.getElementById(info.id);
+  if (!el) return;
+  el.focus();
+  if (info.start !== null && el.setSelectionRange) {
+    try { el.setSelectionRange(info.start, info.end); } catch (e) {}
+  }
+}
+
+function focusFieldById(id) {
+  requestAnimationFrame(() => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.focus();
+      if (el.select) el.select();
+    }
+  });
+}
+
+// ════════════════════════════════════════════
+// Accordion collapse state
+// (stored on the item itself so re-rendering
+// the list -- e.g. after adding a sibling item --
+// doesn't force every card back open)
+// ════════════════════════════════════════════
+
+function toggleCardOpen(type, id, opId) {
+  let item;
+  if (type === 'security') item = securitySchemes.find(x => x.id === id);
+  else if (type === 'path') item = paths.find(x => x.id === id);
+  else if (type === 'schema') item = schemas.find(x => x.id === id);
+  else if (type === 'operation') {
+    const p = paths.find(x => x.id === id);
+    item = p ? p.operations.find(o => o.id === opId) : null;
+  }
+  if (item) item.collapsed = !item.collapsed;
+}
+
+// ════════════════════════════════════════════
+// Drawer Controls
+// ════════════════════════════════════════════
+
+function openDrawer(tabName = 'visual') {
+  document.getElementById('editorDrawer').classList.add('open');
+  document.getElementById('drawerBackdrop').classList.add('active');
+
+  const tabElem = document.querySelector(`.drawer-tab[data-tab="${tabName}"]`);
+  if (tabElem) switchDrawerTab(tabElem);
+}
+
+function closeDrawer() {
+  document.getElementById('editorDrawer').classList.remove('open');
+  document.getElementById('drawerBackdrop').classList.remove('active');
+}
+
+function switchDrawerTab(el) {
+  document.querySelectorAll('.drawer-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.editor-drawer .tab-content').forEach(t => t.classList.remove('active'));
+  const tabId = 'tab-' + el.dataset.tab;
+  document.getElementById(tabId).classList.add('active');
+
+  if (el.dataset.tab === 'code') {
+    updateJSONEditor();
+  }
+}
+
+// ════════════════════════════════════════════
+// Reset / Empty Data
+// ════════════════════════════════════════════
+
+function resetAllData() {
+  if (!confirm('Are you sure you want to clear all data and start from scratch?')) return;
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch(e) {}
+
+  document.getElementById('api-title').value = '';
+  document.getElementById('api-version').value = '1.0.0';
+  document.getElementById('api-description').value = '';
+  document.getElementById('api-contact-email').value = '';
+  document.getElementById('api-license').value = '';
+
+  paths = [];
+  servers = [];
+  tags = [];
+  schemas = [];
+  securitySchemes = [];
+
+  pathCounter = 0;
+  opCounter = 0;
+  serverCounter = 0;
+  tagCounter = 0;
+  schemaCounter = 0;
+  propCounter = 0;
+  paramCounter = 0;
+  responseCounter = 0;
+  securityCounter = 0;
+
+  renderServers();
+  renderTags();
+  renderSecuritySchemes();
+  renderPaths();
+  renderSchemas();
+  buildSpec();
+  // localStorage was just cleared, so the blank in-memory state matches it
+  hasUnsavedChanges = false;
+  updateSaveBadge();
+  toast('Reset to blank spec');
+}
+
+// ════════════════════════════════════════════
+// Servers
+// ════════════════════════════════════════════
+
+function addServer(url = 'https://api.example.com', desc = '') {
+  servers.push({ id: ++serverCounter, url, description: desc });
+  renderServers();
+  buildSpec();
+}
+
+function removeServer(id) {
+  servers = servers.filter(s => s.id !== id);
+  renderServers();
+  buildSpec();
+}
+
+function renderServers() {
+  const el = document.getElementById('servers-list');
+  if (!servers.length) {
+    el.innerHTML = '<div class="empty-state"><span style="font-size:12px">No servers added.</span></div>';
+    return;
+  }
+  el.innerHTML = servers.map(s => `
+    <div class="server-row">
+      <div class="field">
+        <label>URL</label>
+        <input type="text" value="${esc(s.url)}" placeholder="https://api.example.com" onchange="updateServer(${s.id},'url',this.value)" />
+      </div>
+      <div class="field">
+        <label>Description</label>
+        <input type="text" value="${esc(s.description)}" placeholder="Production / Dev" onchange="updateServer(${s.id},'description',this.value)" />
+      </div>
+      <button class="btn btn-sm btn-danger btn-icon" onclick="removeServer(${s.id})" title="Remove">✕</button>
+    </div>
+  `).join('');
+}
+
+function updateServer(id, key, val) {
+  const s = servers.find(s => s.id === id);
+  if (s) { s[key] = val; buildSpec(); }
+}
+
+// ════════════════════════════════════════════
+// Tags
+// ════════════════════════════════════════════
+
+function addTag(name = '', desc = '') {
+  tags.push({ id: ++tagCounter, name, description: desc });
+  renderTags();
+  buildSpec();
+}
+
+function removeTag(id) {
+  tags = tags.filter(t => t.id !== id);
+  renderTags();
+  buildSpec();
+}
+
+function renderTags() {
+  const el = document.getElementById('tags-list');
+  if (!tags.length) {
+    el.innerHTML = '<div class="empty-state"><span style="font-size:12px">No tags added.</span></div>';
+    return;
+  }
+  el.innerHTML = tags.map(t => `
+    <div class="tag-row">
+      <div class="field">
+        <label>Tag</label>
+        <input type="text" value="${esc(t.name)}" placeholder="Users" onchange="updateTag(${t.id},'name',this.value)" />
+      </div>
+      <div class="field">
+        <label>Description</label>
+        <input type="text" value="${esc(t.description)}" placeholder="User endpoints" onchange="updateTag(${t.id},'description',this.value)" />
+      </div>
+      <button class="btn btn-sm btn-danger btn-icon" onclick="removeTag(${t.id})" title="Remove">✕</button>
+    </div>
+  `).join('');
+}
+
+function updateTag(id, key, val) {
+  const t = tags.find(t => t.id === id);
+  if (t) { t[key] = val; buildSpec(); }
+}
+
+// ════════════════════════════════════════════
+// Security Schemes
+// ════════════════════════════════════════════
+
+function addSecurityScheme() {
+  securitySchemes.push({
+    id: ++securityCounter,
+    name: 'BearerAuth',
+    type: 'http',
+    scheme: 'bearer',
+    bearerFormat: 'JWT',
+    apiKeyIn: 'header',
+    apiKeyName: 'X-API-Key'
+  });
+  renderSecuritySchemes();
+  buildSpec();
+}
+
+function removeSecurityScheme(id) {
+  securitySchemes = securitySchemes.filter(s => s.id !== id);
+  renderSecuritySchemes();
+  renderPaths();
+  buildSpec();
+}
+
+function updateSecurity(id, key, val) {
+  const s = securitySchemes.find(s => s.id === id);
+  if (s) {
+    s[key] = val;
+    renderSecuritySchemes();
+    renderPaths();
+    buildSpec();
+  }
+}
+
+function renderSecuritySchemes() {
+  const focusInfo = getFocusedFieldId();
+  const el = document.getElementById('security-list');
+  if (!securitySchemes.length) {
+    el.innerHTML = '<div class="empty-state"><span style="font-size:12px">No security schemes.</span></div>';
+    return;
+  }
+  el.innerHTML = securitySchemes.map(s => `
+    <div class="card ${s.collapsed ? '' : 'open'}">
+      <div class="card-header" onclick="toggleCardOpen('security', ${s.id}); this.parentElement.classList.toggle('open')">
+        <div class="card-header-left">
+          <span class="method-badge method-post">🔒</span>
+          <span>${esc(s.name || 'Unnamed')}</span>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center">
+          <button class="btn btn-sm btn-danger btn-icon" onclick="event.stopPropagation();removeSecurityScheme(${s.id})" title="Remove">✕</button>
+          <svg class="chevron" width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M6 4l4 4-4 4"/></svg>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="field-group">
+          <div class="field">
+            <label>Name</label>
+            <input type="text" id="sec-name-${s.id}" value="${esc(s.name)}" onchange="updateSecurity(${s.id},'name',this.value)" />
+          </div>
+          <div class="field">
+            <label>Type</label>
+            <select onchange="updateSecurity(${s.id},'type',this.value)">
+              <option value="http" ${s.type==='http'?'selected':''}>HTTP</option>
+              <option value="apiKey" ${s.type==='apiKey'?'selected':''}>API Key</option>
+            </select>
+          </div>
+        </div>
+        ${s.type === 'http' ? `
+        <div class="field-group">
+          <div class="field">
+            <label>Scheme</label>
+            <select onchange="updateSecurity(${s.id},'scheme',this.value)">
+              <option value="bearer" ${s.scheme==='bearer'?'selected':''}>Bearer</option>
+              <option value="basic" ${s.scheme==='basic'?'selected':''}>Basic</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Bearer Format</label>
+            <input type="text" id="sec-bearerformat-${s.id}" value="${esc(s.bearerFormat)}" placeholder="JWT" onchange="updateSecurity(${s.id},'bearerFormat',this.value)" />
+          </div>
+        </div>` : `
+        <div class="field-group">
+          <div class="field">
+            <label>In</label>
+            <select onchange="updateSecurity(${s.id},'apiKeyIn',this.value)">
+              <option value="header" ${s.apiKeyIn==='header'?'selected':''}>Header</option>
+              <option value="query" ${s.apiKeyIn==='query'?'selected':''}>Query</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Key Name</label>
+            <input type="text" id="sec-apikeyname-${s.id}" value="${esc(s.apiKeyName)}" placeholder="X-API-Key" onchange="updateSecurity(${s.id},'apiKeyName',this.value)" />
+          </div>
+        </div>`}
+      </div>
+    </div>
+  `).join('');
+  restoreFocusedField(focusInfo);
+}
+
+// ════════════════════════════════════════════
+// Paths & Operations
+// ════════════════════════════════════════════
+
+function addPath(pathName = '') {
+  const newPath = { id: ++pathCounter, path: pathName || '/endpoint', operations: [] };
+  paths.push(newPath);
+  renderPaths();
+  buildSpec();
+  focusFieldById('path-input-' + newPath.id);
+}
+
+function removePath(id) {
+  paths = paths.filter(p => p.id !== id);
+  renderPaths();
+  buildSpec();
+}
+
+function addOperation(pathId, method = 'get') {
+  const p = paths.find(p => p.id === pathId);
+  if (!p) return;
+  p.operations.push({
+    id: ++opCounter,
+    method,
+    summary: '',
+    description: '',
+    operationId: '',
+    tags: tags.length ? [tags[0].name] : [],
+    securityScheme: 'none', // 'none', 'all', or specific scheme name
+    parameters: [],
+    requestBody: { enabled: method === 'post' || method === 'put', contentType: 'application/json', schemaRef: '', exampleJSON: '' },
+    responses: [{ id: ++responseCounter, code: '200', description: 'OK', contentType: 'application/json', schemaRef: '' }]
+  });
+  renderPaths();
+  buildSpec();
+}
+
+function removeOperation(pathId, opId) {
+  const p = paths.find(p => p.id === pathId);
+  if (p) p.operations = p.operations.filter(o => o.id !== opId);
+  renderPaths();
+  buildSpec();
+}
+
+function updatePath(pathId, val) {
+  const p = paths.find(p => p.id === pathId);
+  if (p) { p.path = val; buildSpec(); }
+}
+
+function updateOp(pathId, opId, key, val) {
+  const p = paths.find(p => p.id === pathId);
+  const op = p?.operations.find(o => o.id === opId);
+  if (!op) return;
+
+  if (key === 'tags') {
+    op.tags = val.split(',').map(t => t.trim()).filter(Boolean);
+  } else if (key.startsWith('requestBody.')) {
+    const k = key.split('.')[1];
+    op.requestBody[k] = val;
+  } else {
+    op[key] = val;
+  }
+  buildSpec();
+}
+
+function addParam(pathId, opId) {
+  const p = paths.find(p => p.id === pathId);
+  const op = p?.operations.find(o => o.id === opId);
+  if (op) {
+    op.parameters.push({ id: ++paramCounter, name: '', in: 'query', type: 'string', description: '', required: false });
+    renderPaths();
+    buildSpec();
+  }
+}
+
+function removeParam(pathId, opId, paramId) {
+  const p = paths.find(p => p.id === pathId);
+  const op = p?.operations.find(o => o.id === opId);
+  if (op) {
+    op.parameters = op.parameters.filter(pr => pr.id !== paramId);
+    renderPaths();
+    buildSpec();
+  }
+}
+
+function updateParam(pathId, opId, paramId, key, val) {
+  const p = paths.find(p => p.id === pathId);
+  const op = p?.operations.find(o => o.id === opId);
+  const param = op?.parameters.find(pr => pr.id === paramId);
+  if (param) {
+    param[key] = key === 'required' ? val === 'true' : val;
+    buildSpec();
+  }
+}
+
+function addResponse(pathId, opId) {
+  const p = paths.find(p => p.id === pathId);
+  const op = p?.operations.find(o => o.id === opId);
+  if (op) {
+    op.responses.push({ id: ++responseCounter, code: '400', description: 'Error', contentType: 'application/json', schemaRef: '' });
+    renderPaths();
+    buildSpec();
+  }
+}
+
+function removeResponse(pathId, opId, resId) {
+  const p = paths.find(p => p.id === pathId);
+  const op = p?.operations.find(o => o.id === opId);
+  if (op) {
+    op.responses = op.responses.filter(r => r.id !== resId);
+    renderPaths();
+    buildSpec();
+  }
+}
+
+function updateResponse(pathId, opId, resId, key, val) {
+  const p = paths.find(p => p.id === pathId);
+  const op = p?.operations.find(o => o.id === opId);
+  const res = op?.responses.find(r => r.id === resId);
+  if (res) { res[key] = val; buildSpec(); }
+}
+
+function schemaOptionsHtml(selectedRef) {
+  return schemas.map(s => {
+    const val = `#/components/schemas/${s.name}`;
+    return `<option value="${val}" ${selectedRef === val ? 'selected' : ''}>${esc(s.name)}</option>`;
+  }).join('');
+}
+
+function renderPaths() {
+  const focusInfo = getFocusedFieldId();
+  const el = document.getElementById('paths-list');
+  if (!paths.length) {
+    el.innerHTML = '<div class="empty-state"><span style="font-size:12px">No paths created yet.</span></div>';
+    return;
+  }
+
+  el.innerHTML = paths.map(p => `
+    <div class="card ${p.collapsed ? '' : 'open'}">
+      <div class="card-header" onclick="toggleCardOpen('path', ${p.id}); this.parentElement.classList.toggle('open')">
+        <div class="card-header-left">
+          <span style="font-family:var(--mono);color:var(--accent-hover);font-weight:600">${esc(p.path || '/...')}</span>
+          <span style="color:var(--text-dim);font-size:11px">(${p.operations.length} ops)</span>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center">
+          <button class="btn btn-sm btn-danger btn-icon" onclick="event.stopPropagation();removePath(${p.id})" title="Remove path">✕</button>
+          <svg class="chevron" width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M6 4l4 4-4 4"/></svg>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="field-group full" style="margin-bottom:12px">
+          <div class="field">
+            <label>Endpoint Path</label>
+            <input type="text" id="path-input-${p.id}" value="${esc(p.path)}" onchange="updatePath(${p.id},this.value)" placeholder="/resource/{id}" />
+          </div>
+        </div>
+
+        ${p.operations.map(op => `
+          <div class="card ${op.collapsed ? '' : 'open'}" style="margin-bottom:8px">
+            <div class="card-header" onclick="toggleCardOpen('operation', ${p.id}, ${op.id}); this.parentElement.classList.toggle('open')">
+              <div class="card-header-left">
+                <span class="method-badge method-${op.method}">${op.method}</span>
+                <span>${esc(op.summary || op.operationId || 'Untitled')}</span>
+              </div>
+              <div style="display:flex;gap:4px;align-items:center">
+                <button class="btn btn-sm btn-danger btn-icon" onclick="event.stopPropagation();removeOperation(${p.id},${op.id})" title="Remove">✕</button>
+                <svg class="chevron" width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M6 4l4 4-4 4"/></svg>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="field-group">
+                <div class="field">
+                  <label>Method</label>
+                  <select onchange="updateOp(${p.id},${op.id},'method',this.value)">
+                    ${['get','post','put','patch','delete'].map(m => `<option value="${m}" ${op.method===m?'selected':''}>${m.toUpperCase()}</option>`).join('')}
+                  </select>
+                </div>
+                <div class="field">
+                  <label>Operation ID</label>
+                  <input type="text" id="op-opid-${op.id}" value="${esc(op.operationId)}" placeholder="getUsers" oninput="updateOp(${p.id},${op.id},'operationId',this.value)" />
+                </div>
+              </div>
+              <div class="field-group">
+                <div class="field">
+                  <label>Summary</label>
+                  <input type="text" id="op-summary-${op.id}" value="${esc(op.summary)}" placeholder="Summary" oninput="updateOp(${p.id},${op.id},'summary',this.value)" />
+                </div>
+                <div class="field">
+                  <label>Tags</label>
+                  <input type="text" id="op-tags-${op.id}" value="${esc(op.tags.join(', '))}" placeholder="Users, Admin" oninput="updateOp(${p.id},${op.id},'tags',this.value)" />
+                </div>
+              </div>
+              <div class="field-group full">
+                <div class="field">
+                  <label>🔒 Security Scheme</label>
+                  <select onchange="updateOp(${p.id},${op.id},'securityScheme',this.value)">
+                    <option value="none" ${(!op.securityScheme || op.securityScheme === 'none') ? 'selected' : ''}>None (Public Route)</option>
+                    ${securitySchemes.map(sec => `
+                      <option value="${esc(sec.name)}" ${op.securityScheme === sec.name ? 'selected' : ''}>${esc(sec.name)} (${sec.type === 'http' ? sec.scheme : sec.apiKeyIn})</option>
+                    `).join('')}
+                    ${securitySchemes.length > 1 ? `
+                      <option value="all" ${op.securityScheme === 'all' ? 'selected' : ''}>All Defined Schemes</option>
+                    ` : ''}
+                  </select>
+                </div>
+              </div>
+
+              <!-- Parameters -->
+              <div class="sub-section">
+                <div class="sub-section-title">
+                  <span>Parameters</span>
+                  <button class="btn btn-sm" onclick="addParam(${p.id},${op.id})">+ Param</button>
+                </div>
+                ${op.parameters.map(pr => `
+                  <div class="param-row">
+                    <div class="field">
+                      <input type="text" value="${esc(pr.name)}" placeholder="paramName" onchange="updateParam(${p.id},${op.id},${pr.id},'name',this.value)" />
+                    </div>
+                    <div class="field">
+                      <select onchange="updateParam(${p.id},${op.id},${pr.id},'in',this.value)">
+                        ${['query','path','header','cookie'].map(v => `<option value="${v}" ${pr.in===v?'selected':''}>${v}</option>`).join('')}
+                      </select>
+                    </div>
+                    <div class="field">
+                      <select onchange="updateParam(${p.id},${op.id},${pr.id},'type',this.value)">
+                        ${['string','integer','number','boolean'].map(v => `<option value="${v}" ${pr.type===v?'selected':''}>${v}</option>`).join('')}
+                      </select>
+                    </div>
+                    <div class="field">
+                      <select onchange="updateParam(${p.id},${op.id},${pr.id},'required',this.value)">
+                        <option value="false" ${!pr.required?'selected':''}>Opt</option>
+                        <option value="true" ${pr.required?'selected':''}>Req</option>
+                      </select>
+                    </div>
+                    <button class="btn btn-sm btn-danger btn-icon" onclick="removeParam(${p.id},${op.id},${pr.id})">✕</button>
+                  </div>
+                `).join('')}
+              </div>
+
+              <!-- Request Body -->
+              <div class="sub-section">
+                <div class="sub-section-title">
+                  <span>Request Body</span>
+                  <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer">
+                    <input type="checkbox" ${op.requestBody.enabled?'checked':''} onchange="updateOp(${p.id},${op.id},'requestBody.enabled',this.checked)" />
+                    Enable
+                  </label>
+                </div>
+                ${op.requestBody.enabled ? `
+                  <div class="field-group">
+                    <div class="field">
+                      <label>Schema ($ref)</label>
+                      <select onchange="updateOp(${p.id},${op.id},'requestBody.schemaRef',this.value)">
+                        <option value="" ${!op.requestBody.schemaRef ? 'selected' : ''}>— none / inline —</option>
+                        ${schemaOptionsHtml(op.requestBody.schemaRef)}
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label>Content Type</label>
+                      <input type="text" id="op-reqct-${op.id}" value="${esc(op.requestBody.contentType)}" onchange="updateOp(${p.id},${op.id},'requestBody.contentType',this.value)" />
+                    </div>
+                  </div>
+                ` : ''}
+              </div>
+
+              <!-- Responses -->
+              <div class="sub-section">
+                <div class="sub-section-title">
+                  <span>Responses</span>
+                  <button class="btn btn-sm" onclick="addResponse(${p.id},${op.id})">+ Resp</button>
+                </div>
+                ${op.responses.map(r => `
+                  <div class="response-row">
+                    <div class="field">
+                      <input type="text" value="${esc(r.code)}" placeholder="200" onchange="updateResponse(${p.id},${op.id},${r.id},'code',this.value)" />
+                    </div>
+                    <div class="field">
+                      <input type="text" value="${esc(r.description)}" placeholder="Description" onchange="updateResponse(${p.id},${op.id},${r.id},'description',this.value)" />
+                    </div>
+                    <button class="btn btn-sm btn-danger btn-icon" onclick="removeResponse(${p.id},${op.id},${r.id})">✕</button>
+                  </div>
+                  <div class="field-group" style="margin-bottom:8px">
+                    <div class="field">
+                      <select onchange="updateResponse(${p.id},${op.id},${r.id},'schemaRef',this.value)">
+                        <option value="" ${!r.schemaRef ? 'selected' : ''}>— Select Schema ($ref) —</option>
+                        ${schemaOptionsHtml(r.schemaRef)}
+                      </select>
+                    </div>
+                    <div class="field">
+                      <input type="text" value="${esc(r.contentType)}" onchange="updateResponse(${p.id},${op.id},${r.id},'contentType',this.value)" />
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+
+            </div>
+          </div>
+        `).join('')}
+
+        <button class="btn btn-sm" onclick="addOperation(${p.id})" style="margin-top:6px">+ Add Operation</button>
+      </div>
+    </div>
+  `).join('');
+  restoreFocusedField(focusInfo);
+}
+
+// ════════════════════════════════════════════
+// Schemas
+// ════════════════════════════════════════════
+
+function addSchema(name = '') {
+  const newSchema = {
+    id: ++schemaCounter,
+    name: name || 'Model',
+    type: 'object',
+    properties: []
+  };
+  schemas.push(newSchema);
+  renderSchemas();
+  renderPaths();
+  buildSpec();
+  focusFieldById('schema-name-' + newSchema.id);
+}
+
+function removeSchema(id) {
+  schemas = schemas.filter(s => s.id !== id);
+  renderSchemas();
+  renderPaths();
+  buildSpec();
+}
+
+function updateSchema(id, key, val) {
+  const s = schemas.find(s => s.id === id);
+  if (s) {
+    s[key] = val;
+    if (key === 'name') {
+      renderPaths();
+      renderSchemas();
+    }
+    buildSpec();
+  }
+}
+
+function addSchemaProp(schemaId) {
+  const s = schemas.find(s => s.id === schemaId);
+  if (s) {
+    s.properties.push({ id: ++propCounter, name: '', type: 'string', format: '', schemaRef: '', example: '', required: false });
+    renderSchemas();
+    buildSpec();
+  }
+}
+
+function removeSchemaProp(schemaId, propId) {
+  const s = schemas.find(s => s.id === schemaId);
+  if (s) {
+    s.properties = s.properties.filter(p => p.id !== propId);
+    renderSchemas();
+    buildSpec();
+  }
+}
+
+function updateSchemaProp(schemaId, propId, key, val) {
+  const s = schemas.find(s => s.id === schemaId);
+  const prop = s?.properties.find(p => p.id === propId);
+  if (prop) {
+    prop[key] = key === 'required' ? val === 'true' : val;
+    if (key === 'type') {
+      // Re-render to show/hide schemaRef dropdown vs format/example input
+      renderSchemas();
+    }
+    buildSpec();
+  }
+}
+
+function renderSchemas() {
+  const focusInfo = getFocusedFieldId();
+  const el = document.getElementById('schemas-list');
+  if (!schemas.length) {
+    el.innerHTML = '<div class="empty-state"><span style="font-size:12px">No schemas defined.</span></div>';
+    return;
+  }
+
+  el.innerHTML = schemas.map(s => {
+    // Other schemas that can be referenced
+    const otherSchemas = schemas.filter(item => item.name && item.name.trim() !== '');
+
+    return `
+    <div class="card ${s.collapsed ? '' : 'open'}">
+      <div class="card-header" onclick="toggleCardOpen('schema', ${s.id}); this.parentElement.classList.toggle('open')">
+        <div class="card-header-left">
+          <span class="method-badge method-put">OBJ</span>
+          <span>${esc(s.name || 'Unnamed')}</span>
+          <span style="color:var(--text-dim);font-size:11px">(${s.properties.length} props)</span>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center">
+          <button class="btn btn-sm btn-danger btn-icon" onclick="event.stopPropagation();removeSchema(${s.id})" title="Remove">✕</button>
+          <svg class="chevron" width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M6 4l4 4-4 4"/></svg>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="field-group">
+          <div class="field">
+            <label>Model Name</label>
+            <input type="text" id="schema-name-${s.id}" value="${esc(s.name)}" placeholder="User" oninput="updateSchema(${s.id},'name',this.value)" />
+          </div>
+          <div class="field">
+            <label>Type</label>
+            <select onchange="updateSchema(${s.id},'type',this.value)">
+              <option value="object" ${s.type==='object'?'selected':''}>object</option>
+              <option value="array" ${s.type==='array'?'selected':''}>array</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="sub-section">
+          <div class="sub-section-title">
+            <span>Fields / Properties</span>
+            <button class="btn btn-sm" onclick="addSchemaProp(${s.id})">+ Prop</button>
+          </div>
+          ${s.properties.map(pr => {
+            const isRefCapable = pr.type === 'object' || pr.type === 'array';
+            const schemaOptions = otherSchemas.map(os =>
+              `<option value="#/components/schemas/${os.name}" ${pr.schemaRef === `#/components/schemas/${os.name}` ? 'selected' : ''}>$ref: ${os.name}</option>`
+            ).join('');
+
+            return `
+            <div class="schema-prop-row">
+              <div class="field">
+                <input type="text" id="prop-name-${pr.id}" value="${esc(pr.name)}" placeholder="fieldName" oninput="updateSchemaProp(${s.id},${pr.id},'name',this.value)" />
+              </div>
+              <div class="field">
+                <select onchange="updateSchemaProp(${s.id},${pr.id},'type',this.value)">
+                  ${['string','integer','number','boolean','array','object'].map(t => `<option value="${t}" ${pr.type===t?'selected':''}>${t}</option>`).join('')}
+                </select>
+              </div>
+              <div class="field">
+                ${isRefCapable ? `
+                  <select onchange="updateSchemaProp(${s.id},${pr.id},'schemaRef',this.value)" title="${pr.type==='object'?'Reference another schema as object':'Item schema ($ref)'}">
+                    <option value="">${pr.type==='object'?'— Generic Object —':'— Generic Items —'}</option>
+                    ${schemaOptions}
+                  </select>
+                ` : `
+                  <input type="text" id="prop-format-${pr.id}" value="${esc(pr.format || '')}" placeholder="format (e.g. uuid)" oninput="updateSchemaProp(${s.id},${pr.id},'format',this.value)" />
+                `}
+              </div>
+              <div class="field">
+                ${!isRefCapable ? `
+                  <input type="text" id="prop-example-${pr.id}" value="${esc(pr.example != null ? pr.example : '')}" placeholder="example value" oninput="updateSchemaProp(${s.id},${pr.id},'example',this.value)" title="Property Example" />
+                ` : `
+                  <span style="font-size:11px;color:var(--text-dim);line-height:28px;text-align:center;display:block">—</span>
+                `}
+              </div>
+              <div class="field">
+                <select onchange="updateSchemaProp(${s.id},${pr.id},'required',this.value)">
+                  <option value="false" ${!pr.required?'selected':''}>Opt</option>
+                  <option value="true" ${pr.required?'selected':''}>Req</option>
+                </select>
+              </div>
+              <button class="btn btn-sm btn-danger btn-icon" onclick="removeSchemaProp(${s.id},${pr.id})">✕</button>
+            </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+    `;
+  }).join('');
+  restoreFocusedField(focusInfo);
+}
+
+// ════════════════════════════════════════════
+// Spec Synthesis & Scalar Rendering
+// ════════════════════════════════════════════
+
+function buildSpec() {
+  const title = document.getElementById('api-title').value.trim() || 'My API';
+  const version = document.getElementById('api-version').value.trim() || '1.0.0';
+
+  spec = {
+    openapi: '3.1.0',
+    info: { title, version },
+    paths: {},
+    components: { schemas: {}, securitySchemes: {} }
+  };
+
+  const desc = document.getElementById('api-description').value;
+  if (desc) spec.info.description = desc;
+
+  const license = document.getElementById('api-license').value;
+  if (license) spec.info.license = { name: license };
+
+  const email = document.getElementById('api-contact-email').value;
+  if (email) spec.info.contact = { email };
+
+  // Servers
+  if (servers.length) {
+    spec.servers = servers.map(s => ({ url: s.url, description: s.description || undefined }));
+  }
+
+  // Tags
+  if (tags.length) {
+    spec.tags = tags.map(t => ({ name: t.name, description: t.description || undefined }));
+  }
+
+  // Security Schemes
+  securitySchemes.forEach(s => {
+    const sc = { type: s.type };
+    if (s.type === 'http') {
+      sc.scheme = s.scheme;
+      if (s.scheme === 'bearer' && s.bearerFormat) sc.bearerFormat = s.bearerFormat;
+    } else if (s.type === 'apiKey') {
+      sc.in = s.apiKeyIn;
+      sc.name = s.apiKeyName;
+    }
+    spec.components.securitySchemes[s.name] = sc;
+  });
+
+  if (!Object.keys(spec.components.securitySchemes).length) {
+    delete spec.components.securitySchemes;
+  }
+
+  // Paths
+  paths.forEach(p => {
+    const pathObj = {};
+    p.operations.forEach(op => {
+      const operation = {};
+      if (op.summary) operation.summary = op.summary;
+      if (op.operationId) operation.operationId = op.operationId;
+      if (op.tags.length) operation.tags = [...op.tags];
+
+      // Route-level Security Scheme
+      if (op.securityScheme && op.securityScheme !== 'none') {
+        if (op.securityScheme === 'all') {
+          operation.security = securitySchemes.map(s => ({ [s.name]: [] }));
+        } else {
+          operation.security = [{ [op.securityScheme]: [] }];
+        }
+      }
+
+      if (op.parameters.length) {
+        operation.parameters = op.parameters.map(pr => ({
+          name: pr.name,
+          in: pr.in,
+          schema: { type: pr.type },
+          required: pr.required || pr.in === 'path'
+        }));
+      }
+
+      if (op.requestBody.enabled) {
+        const ct = op.requestBody.contentType || 'application/json';
+        const rb = { required: true, content: {} };
+        if (op.requestBody.schemaRef) {
+          rb.content[ct] = { schema: { $ref: op.requestBody.schemaRef } };
+        } else {
+          rb.content[ct] = { schema: { type: 'object' } };
+        }
+        operation.requestBody = rb;
+      }
+
+      operation.responses = {};
+      op.responses.forEach(r => {
+        const res = { description: r.description || 'Response' };
+        if (r.schemaRef) {
+          res.content = { [r.contentType || 'application/json']: { schema: { $ref: r.schemaRef } } };
+        }
+        operation.responses[r.code] = res;
+      });
+
+      pathObj[op.method] = operation;
+    });
+
+    if (Object.keys(pathObj).length) {
+      spec.paths[p.path] = pathObj;
+    }
+  });
+
+  // Schemas
+  schemas.forEach(s => {
+    const sc = { type: s.type, properties: {} };
+    const req = [];
+    s.properties.forEach(pr => {
+      if (!pr.name || !pr.name.trim()) return;
+
+      if (pr.type === 'object') {
+        if (pr.schemaRef) {
+          sc.properties[pr.name] = { $ref: pr.schemaRef };
+        } else {
+          sc.properties[pr.name] = { type: 'object' };
+        }
+      } else if (pr.type === 'array') {
+        if (pr.schemaRef) {
+          sc.properties[pr.name] = {
+            type: 'array',
+            items: { $ref: pr.schemaRef }
+          };
+        } else {
+          sc.properties[pr.name] = {
+            type: 'array',
+            items: { type: 'string' }
+          };
+        }
+      } else {
+        const propObj = { type: pr.type };
+        if (pr.format) propObj.format = pr.format;
+        if (pr.example !== undefined && pr.example !== '') {
+          if (pr.type === 'integer') {
+            const num = parseInt(pr.example, 10);
+            propObj.example = isNaN(num) ? pr.example : num;
+          } else if (pr.type === 'number') {
+            const num = parseFloat(pr.example);
+            propObj.example = isNaN(num) ? pr.example : num;
+          } else if (pr.type === 'boolean') {
+            propObj.example = pr.example === 'true' || pr.example === '1';
+          } else {
+            propObj.example = pr.example;
+          }
+        }
+        sc.properties[pr.name] = propObj;
+      }
+
+      if (pr.required) req.push(pr.name);
+    });
+    if (req.length) sc.required = req;
+    spec.components.schemas[s.name] = sc;
+  });
+
+  if (!Object.keys(spec.components.schemas).length) delete spec.components.schemas;
+  if (!Object.keys(spec.components).length) delete spec.components;
+
+  markDirty();
+  updateJSONEditor();
+  renderScalar();
+}
+
+// ════════════════════════════════════════════
+// Persistence: LocalStorage (manual save)
+// ════════════════════════════════════════════
+
+const STORAGE_KEY = 'scalar_openapi_spec_data_v1';
+let hasUnsavedChanges = false;
+
+function markDirty() {
+  hasUnsavedChanges = true;
+  updateSaveBadge();
+}
+
+function updateSaveBadge() {
+  const badge = document.getElementById('save-status-badge');
+  if (!badge) return;
+  if (hasUnsavedChanges) {
+    badge.innerHTML = '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--warning)"></span> Unsaved changes';
+  } else {
+    badge.innerHTML = '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--success)"></span> Saved';
+  }
+}
+
+function manualSave() {
+  saveToStorage();
+}
+
+function saveToStorage() {
+  const badge = document.getElementById('save-status-badge');
+  try {
+    const dataToSave = {
+      title: document.getElementById('api-title')?.value || '',
+      version: document.getElementById('api-version')?.value || '',
+      description: document.getElementById('api-description')?.value || '',
+      license: document.getElementById('api-license')?.value || '',
+      email: document.getElementById('api-contact-email')?.value || '',
+      servers,
+      tags,
+      securitySchemes,
+      paths,
+      schemas,
+      counters: {
+        pathCounter, opCounter, serverCounter, tagCounter, schemaCounter, propCounter, paramCounter, responseCounter, securityCounter
+      }
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+    hasUnsavedChanges = false;
+    updateSaveBadge();
+    toast('Saved!');
+  } catch (e) {
+    console.warn('Failed to save to localStorage:', e);
+    if (badge) {
+      badge.innerHTML = '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--danger)"></span> Save Error';
+    }
+    toast('Save failed: ' + e.message);
+  }
+}
+
+function loadFromStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+
+    document.getElementById('api-title').value = data.title || '';
+    document.getElementById('api-version').value = data.version || '1.0.0';
+    document.getElementById('api-description').value = data.description || '';
+    document.getElementById('api-license').value = data.license || '';
+    document.getElementById('api-contact-email').value = data.email || '';
+
+    servers = Array.isArray(data.servers) ? data.servers : [];
+    tags = Array.isArray(data.tags) ? data.tags : [];
+    securitySchemes = Array.isArray(data.securitySchemes) ? data.securitySchemes : [];
+    paths = Array.isArray(data.paths) ? data.paths : [];
+    schemas = Array.isArray(data.schemas) ? data.schemas : [];
+
+    if (data.counters) {
+      pathCounter = data.counters.pathCounter || 0;
+      opCounter = data.counters.opCounter || 0;
+      serverCounter = data.counters.serverCounter || 0;
+      tagCounter = data.counters.tagCounter || 0;
+      schemaCounter = data.counters.schemaCounter || 0;
+      propCounter = data.counters.propCounter || 0;
+      paramCounter = data.counters.paramCounter || 0;
+      responseCounter = data.counters.responseCounter || 0;
+      securityCounter = data.counters.securityCounter || 0;
+    }
+
+    renderServers();
+    renderTags();
+    renderSecuritySchemes();
+    renderPaths();
+    renderSchemas();
+    return true;
+  } catch (e) {
+    console.warn('Failed to parse from localStorage:', e);
+    return false;
+  }
+}
+
+function updateJSONEditor() {
+  const editor = document.getElementById('json-editor');
+  if (editor && document.activeElement !== editor) {
+    editor.value = JSON.stringify(spec, null, 2);
+  }
+}
+
+function applyJSON() {
+  const editor = document.getElementById('json-editor');
+  try {
+    const parsed = JSON.parse(editor.value);
+    spec = parsed;
+    loadSpecIntoUI(spec);
+    document.getElementById('json-status').textContent = '✓ Synced with Scalar';
+    document.getElementById('json-status').style.color = 'var(--success)';
+    renderScalar();
+    markDirty();
+    toast('Scalar refreshed with updated JSON!');
+  } catch (e) {
+    document.getElementById('json-status').textContent = '✕ Syntax Error: ' + e.message;
+    document.getElementById('json-status').style.color = 'var(--danger)';
+  }
+}
+
+function formatJSON() {
+  const editor = document.getElementById('json-editor');
+  try {
+    const parsed = JSON.parse(editor.value);
+    editor.value = JSON.stringify(parsed, null, 2);
+    document.getElementById('json-status').textContent = '✓ Formatted';
+    document.getElementById('json-status').style.color = 'var(--success)';
+  } catch (e) {
+    document.getElementById('json-status').textContent = '✕ ' + e.message;
+    document.getElementById('json-status').style.color = 'var(--danger)';
+  }
+}
+
+let scalarRenderTimer = null;
+function renderScalar() {
+  clearTimeout(scalarRenderTimer);
+  scalarRenderTimer = setTimeout(() => {
+    const container = document.getElementById('scalar-container');
+    container.innerHTML = '';
+    const root = document.createElement('div');
+    root.id = 'scalar-target';
+    container.appendChild(root);
+
+    try {
+      Scalar.createApiReference('#scalar-target', {
+        spec: { content: JSON.parse(JSON.stringify(spec)) },
+        theme: 'kepler',
+        darkMode: true,
+        hideDownloadButton: false,
+        showSidebar: true,
+        customCss: `
+          :root, * {
+            --scalar-border-color: transparent !important;
+            --theme-border-color: transparent !important;
+          }
+          .scalar-card,
+          .scalar-card-content,
+          .scalar-card-section,
+          .scalar-api-reference,
+          .sidebar,
+          aside,
+          .border,
+          .border-b,
+          .border-t,
+          .border-r,
+          .border-l,
+          [class*="border"] {
+            border-color: transparent !important;
+          }
+        `
+      });
+    } catch (err) {
+      container.innerHTML = `<div class="empty-state"><span style="color:var(--danger)">Scalar Error: ${esc(err.message)}</span></div>`;
+    }
+  }, 350);
+}
+
+// ════════════════════════════════════════════
+// Import / Export
+// ════════════════════════════════════════════
+
+function importSpec() {
+  document.getElementById('file-input').click();
+}
+
+function handleFileImport(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    try {
+      let parsed;
+      if (file.name.endsWith('.yaml') || file.name.endsWith('.yml')) {
+        parsed = jsyaml.load(evt.target.result);
+      } else {
+        parsed = JSON.parse(evt.target.result);
+      }
+      spec = parsed;
+      loadSpecIntoUI(spec);
+      renderScalar();
+      markDirty();
+      toast('Spec loaded into Scalar!');
+    } catch (err) {
+      toast('Import error: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+function loadSpecIntoUI(s) {
+  document.getElementById('api-title').value = s.info?.title || '';
+  document.getElementById('api-version').value = s.info?.version || '';
+  document.getElementById('api-description').value = s.info?.description || '';
+  document.getElementById('api-license').value = s.info?.license?.name || '';
+  document.getElementById('api-contact-email').value = s.info?.contact?.email || '';
+
+  // Servers
+  servers = (s.servers || []).map(sv => ({ id: ++serverCounter, url: sv.url, description: sv.description || '' }));
+  renderServers();
+
+  // Tags
+  tags = (s.tags || []).map(t => ({ id: ++tagCounter, name: t.name, description: t.description || '' }));
+  renderTags();
+
+  // Security
+  securitySchemes = [];
+  if (s.components?.securitySchemes) {
+    Object.entries(s.components.securitySchemes).forEach(([k, val]) => {
+      securitySchemes.push({
+        id: ++securityCounter,
+        name: k,
+        type: val.type || 'http',
+        scheme: val.scheme || 'bearer',
+        bearerFormat: val.bearerFormat || '',
+        apiKeyIn: val.in || 'header',
+        apiKeyName: val.name || ''
+      });
+    });
+  }
+  renderSecuritySchemes();
+
+  // Schemas
+  schemas = [];
+  if (s.components?.schemas) {
+    Object.entries(s.components.schemas).forEach(([name, sc]) => {
+      const item = { id: ++schemaCounter, name, type: sc.type || 'object', properties: [] };
+      if (sc.properties) {
+        Object.entries(sc.properties).forEach(([pName, pVal]) => {
+          let propType = pVal.type || 'string';
+          let schemaRef = '';
+          let format = pVal.format || '';
+
+          if (pVal.$ref) {
+            propType = 'object';
+            schemaRef = pVal.$ref;
+          } else if (pVal.type === 'array' && pVal.items?.$ref) {
+            propType = 'array';
+            schemaRef = pVal.items.$ref;
+          }
+
+          let example = pVal.example !== undefined ? pVal.example : '';
+
+          item.properties.push({
+            id: ++propCounter,
+            name: pName,
+            type: propType,
+            format: format,
+            schemaRef: schemaRef,
+            example: example,
+            required: (sc.required || []).includes(pName)
+          });
+        });
+      }
+      schemas.push(item);
+    });
+  }
+  renderSchemas();
+
+  // Paths
+  paths = [];
+  if (s.paths) {
+    Object.entries(s.paths).forEach(([pth, methods]) => {
+      const p = { id: ++pathCounter, path: pth, operations: [] };
+      Object.entries(methods).forEach(([method, opData]) => {
+        if (!['get','post','put','patch','delete'].includes(method)) return;
+        const op = {
+          id: ++opCounter,
+          method,
+          summary: opData.summary || '',
+          operationId: opData.operationId || '',
+          tags: opData.tags || [],
+          securityScheme: 'none',
+          parameters: (opData.parameters || []).map(pr => ({
+            id: ++paramCounter,
+            name: pr.name,
+            in: pr.in || 'query',
+            type: pr.schema?.type || 'string',
+            required: pr.required || false
+          })),
+          requestBody: {
+            enabled: !!opData.requestBody,
+            contentType: opData.requestBody ? Object.keys(opData.requestBody.content || {})[0] || 'application/json' : 'application/json',
+            schemaRef: ''
+          },
+          responses: []
+        };
+
+        // Parse operation security
+        if (Array.isArray(opData.security)) {
+          if (opData.security.length === 0) {
+            op.securityScheme = 'none';
+          } else if (opData.security.length === 1) {
+            op.securityScheme = Object.keys(opData.security[0])[0] || 'none';
+          } else {
+            op.securityScheme = 'all';
+          }
+        } else if (Array.isArray(s.security) && s.security.length > 0) {
+          // If inherited from global security
+          op.securityScheme = Object.keys(s.security[0])[0] || 'all';
+        }
+
+        if (opData.requestBody?.content) {
+          const ct = Object.keys(opData.requestBody.content)[0];
+          op.requestBody.schemaRef = opData.requestBody.content[ct]?.schema?.$ref || '';
+        }
+
+        if (opData.responses) {
+          Object.entries(opData.responses).forEach(([code, rData]) => {
+            const r = {
+              id: ++responseCounter,
+              code,
+              description: rData.description || '',
+              contentType: rData.content ? Object.keys(rData.content)[0] : 'application/json',
+              schemaRef: ''
+            };
+            if (rData.content) {
+              const ct = Object.keys(rData.content)[0];
+              r.schemaRef = rData.content[ct]?.schema?.$ref || '';
+            }
+            op.responses.push(r);
+          });
+        }
+        p.operations.push(op);
+      });
+      paths.push(p);
+    });
+  }
+  renderPaths();
+  updateJSONEditor();
+}
+
+function exportJSON() {
+  navigator.clipboard.writeText(JSON.stringify(spec, null, 2)).then(() => toast('Copied JSON!'));
+}
+
+function exportYAML() {
+  const y = jsyaml.dump(spec, { lineWidth: -1, noRefs: true });
+  navigator.clipboard.writeText(y).then(() => toast('Copied YAML!'));
+}
+
+function downloadSpec(format) {
+  let content, filename, mime;
+  if (format === 'yaml') {
+    content = jsyaml.dump(spec, { lineWidth: -1, noRefs: true });
+    filename = 'openapi.yaml';
+    mime = 'application/x-yaml';
+  } else {
+    content = JSON.stringify(spec, null, 2);
+    filename = 'openapi.json';
+    mime = 'application/json';
+  }
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast(`Downloaded ${filename}`);
+}
+
+function esc(str) {
+  if (str == null) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
+// ════════════════════════════════════════════
+// Initialize Empty Spec
+// ════════════════════════════════════════════
+
+document.addEventListener('DOMContentLoaded', () => {
+  const loaded = loadFromStorage();
+  if (!loaded) {
+    renderServers();
+    renderTags();
+    renderSecuritySchemes();
+    renderPaths();
+    renderSchemas();
+    // Open drawer on first fresh visit
+    openDrawer('visual');
+  }
+  buildSpec();
+  // The build above just reflects what's already on disk (or a blank
+  // slate) — it isn't a real edit, so don't flag it as unsaved.
+  hasUnsavedChanges = false;
+  updateSaveBadge();
+});
+
+// Ctrl+S / Cmd+S: save to localStorage instead of triggering the browser's save dialog
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+    e.preventDefault();
+    manualSave();
+  }
+});
+
+// Warn before leaving with unsaved changes
+window.addEventListener('beforeunload', (e) => {
+  if (hasUnsavedChanges) {
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
+</script>
+</body>
+</html>

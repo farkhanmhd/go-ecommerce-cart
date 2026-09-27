@@ -1,0 +1,34 @@
+# Binaries & build artifacts
+/bin/
+/dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, coverage, and profiler output
+*.test
+*.out
+profile.pprof
+coverage.txt
+
+# Dependency / vendor directories
+/vendor/
+
+# Environment and local secret files
+.env
+.env.*
+!.env.example
+
+# IDEs & Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Ignore all markdown files except README.md
+*.md
+!README.md
