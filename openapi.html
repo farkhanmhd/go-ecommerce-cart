@@ -476,6 +476,90 @@
 
     .tab-content { display: none; }
     .tab-content.active { display: flex; flex-direction: column; flex: 1; overflow: hidden; height: 100%; }
+
+    /* ── Import Modal ── */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 10000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-backdrop.active {
+      display: flex;
+    }
+    .modal-dialog {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65);
+      width: 680px;
+      max-width: 95vw;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      animation: modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes modalFadeIn {
+      from { transform: scale(0.96); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+    }
+    .modal-title {
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #fff;
+    }
+    .modal-body {
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1;
+    }
+    .modal-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      background: var(--surface2);
+    }
+    #import-paste-input {
+      width: 100%;
+      height: 280px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.5;
+      padding: 10px;
+      resize: vertical;
+      outline: none;
+      box-sizing: border-box;
+      transition: border-color .15s ease;
+    }
+    #import-paste-input:focus {
+      border-color: var(--accent);
+    }
   </style>
 </head>
 <body>
@@ -564,23 +648,23 @@
           <div class="field-group">
             <div class="field">
               <label>Title</label>
-              <input type="text" id="api-title" value="" placeholder="My API" oninput="buildSpec()" />
+              <input type="text" id="api-title" value="" placeholder="My API" onchange="buildSpec()" />
             </div>
             <div class="field">
               <label>Version</label>
-              <input type="text" id="api-version" value="1.0.0" placeholder="1.0.0" oninput="buildSpec()" />
+              <input type="text" id="api-version" value="1.0.0" placeholder="1.0.0" onchange="buildSpec()" />
             </div>
           </div>
           <div class="field-group full">
             <div class="field">
               <label>Description</label>
-              <input type="text" id="api-description" value="" placeholder="API Description..." oninput="buildSpec()" />
+              <input type="text" id="api-description" value="" placeholder="API Description..." onchange="buildSpec()" />
             </div>
           </div>
           <div class="field-group">
             <div class="field">
               <label>Contact Email</label>
-              <input type="text" id="api-contact-email" placeholder="dev@example.com" oninput="buildSpec()" />
+              <input type="text" id="api-contact-email" placeholder="dev@example.com" onchange="buildSpec()" />
             </div>
             <div class="field">
               <label>License</label>
@@ -667,6 +751,48 @@
 
 <!-- Hidden file input for import -->
 <input type="file" id="file-input" accept=".json,.yaml,.yml" style="display:none" onchange="handleFileImport(event)" />
+
+<!-- Import Spec Modal -->
+<div class="modal-backdrop" id="importModal" onclick="handleImportModalBackdrop(event)">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <div class="modal-title">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Import OpenAPI Specification
+      </div>
+      <button class="btn btn-sm btn-icon" onclick="closeImportModal()" title="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <label for="import-paste-input" style="font-size:12px;font-weight:500;color:var(--text)">
+          Paste OpenAPI JSON or YAML schema:
+        </label>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm" type="button" onclick="pasteFromClipboardToImport()" title="Paste text from clipboard">📋 Paste</button>
+          <button class="btn btn-sm" type="button" onclick="formatImportJSON()" title="Format JSON">Format</button>
+          <button class="btn btn-sm" type="button" onclick="clearImportInput()" title="Clear textarea">Clear</button>
+        </div>
+      </div>
+
+      <textarea
+        id="import-paste-input"
+        spellcheck="false"
+        placeholder='Paste OpenAPI schema here (JSON or YAML), e.g.:&#10;{&#10;  "openapi": "3.1.0",&#10;  "info": {&#10;    "title": "My API",&#10;    "version": "1.0.0"&#10;  },&#10;  "paths": {}&#10;}'
+      ></textarea>
+
+      <div id="import-error-msg" style="font-size:12px;min-height:16px;color:var(--danger)"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" type="button" onclick="triggerFileInput()" title="Choose local JSON or YAML file">
+        📂 Choose File...
+      </button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm" type="button" onclick="closeImportModal()">Cancel</button>
+        <button class="btn btn-sm btn-primary" type="button" onclick="handleImportPaste()">Import Schema</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
 // ════════════════════════════════════════════
@@ -1193,17 +1319,17 @@ function renderPaths() {
                 </div>
                 <div class="field">
                   <label>Operation ID</label>
-                  <input type="text" id="op-opid-${op.id}" value="${esc(op.operationId)}" placeholder="getUsers" oninput="updateOp(${p.id},${op.id},'operationId',this.value)" />
+                  <input type="text" id="op-opid-${op.id}" value="${esc(op.operationId)}" placeholder="getUsers" onchange="updateOp(${p.id},${op.id},'operationId',this.value)" />
                 </div>
               </div>
               <div class="field-group">
                 <div class="field">
                   <label>Summary</label>
-                  <input type="text" id="op-summary-${op.id}" value="${esc(op.summary)}" placeholder="Summary" oninput="updateOp(${p.id},${op.id},'summary',this.value)" />
+                  <input type="text" id="op-summary-${op.id}" value="${esc(op.summary)}" placeholder="Summary" onchange="updateOp(${p.id},${op.id},'summary',this.value)" />
                 </div>
                 <div class="field">
                   <label>Tags</label>
-                  <input type="text" id="op-tags-${op.id}" value="${esc(op.tags.join(', '))}" placeholder="Users, Admin" oninput="updateOp(${p.id},${op.id},'tags',this.value)" />
+                  <input type="text" id="op-tags-${op.id}" value="${esc(op.tags.join(', '))}" placeholder="Users, Admin" onchange="updateOp(${p.id},${op.id},'tags',this.value)" />
                 </div>
               </div>
               <div class="field-group full">
@@ -1417,7 +1543,7 @@ function renderSchemas() {
         <div class="field-group">
           <div class="field">
             <label>Model Name</label>
-            <input type="text" id="schema-name-${s.id}" value="${esc(s.name)}" placeholder="User" oninput="updateSchema(${s.id},'name',this.value)" />
+            <input type="text" id="schema-name-${s.id}" value="${esc(s.name)}" placeholder="User" onchange="updateSchema(${s.id},'name',this.value)" />
           </div>
           <div class="field">
             <label>Type</label>
@@ -1442,7 +1568,7 @@ function renderSchemas() {
             return `
             <div class="schema-prop-row">
               <div class="field">
-                <input type="text" id="prop-name-${pr.id}" value="${esc(pr.name)}" placeholder="fieldName" oninput="updateSchemaProp(${s.id},${pr.id},'name',this.value)" />
+                <input type="text" id="prop-name-${pr.id}" value="${esc(pr.name)}" placeholder="fieldName" onchange="updateSchemaProp(${s.id},${pr.id},'name',this.value)" />
               </div>
               <div class="field">
                 <select onchange="updateSchemaProp(${s.id},${pr.id},'type',this.value)">
@@ -1456,12 +1582,12 @@ function renderSchemas() {
                     ${schemaOptions}
                   </select>
                 ` : `
-                  <input type="text" id="prop-format-${pr.id}" value="${esc(pr.format || '')}" placeholder="format (e.g. uuid)" oninput="updateSchemaProp(${s.id},${pr.id},'format',this.value)" />
+                  <input type="text" id="prop-format-${pr.id}" value="${esc(pr.format || '')}" placeholder="format (e.g. uuid)" onchange="updateSchemaProp(${s.id},${pr.id},'format',this.value)" />
                 `}
               </div>
               <div class="field">
                 ${!isRefCapable ? `
-                  <input type="text" id="prop-example-${pr.id}" value="${esc(pr.example != null ? pr.example : '')}" placeholder="example value" oninput="updateSchemaProp(${s.id},${pr.id},'example',this.value)" title="Property Example" />
+                  <input type="text" id="prop-example-${pr.id}" value="${esc(pr.example != null ? pr.example : '')}" placeholder="example value" onchange="updateSchemaProp(${s.id},${pr.id},'example',this.value)" title="Property Example" />
                 ` : `
                   <span style="font-size:11px;color:var(--text-dim);line-height:28px;text-align:center;display:block">—</span>
                 `}
@@ -1645,7 +1771,6 @@ function buildSpec() {
 
   markDirty();
   updateJSONEditor();
-  renderScalar();
 }
 
 // ════════════════════════════════════════════
@@ -1695,6 +1820,7 @@ function saveToStorage() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
     hasUnsavedChanges = false;
     updateSaveBadge();
+    renderScalar();
     toast('Saved!');
   } catch (e) {
     console.warn('Failed to save to localStorage:', e);
@@ -1757,7 +1883,16 @@ function updateJSONEditor() {
 function applyJSON() {
   const editor = document.getElementById('json-editor');
   try {
-    const parsed = JSON.parse(editor.value);
+    const raw = editor.value.trim();
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch (jErr) {
+      parsed = jsyaml.load(raw);
+    }
+    if (!parsed || typeof parsed !== 'object') {
+      throw new Error('Specification must be a valid JSON or YAML object.');
+    }
     spec = parsed;
     loadSpecIntoUI(spec);
     document.getElementById('json-status').textContent = '✓ Synced with Scalar';
@@ -1784,56 +1919,194 @@ function formatJSON() {
   }
 }
 
-let scalarRenderTimer = null;
 function renderScalar() {
-  clearTimeout(scalarRenderTimer);
-  scalarRenderTimer = setTimeout(() => {
-    const container = document.getElementById('scalar-container');
-    container.innerHTML = '';
-    const root = document.createElement('div');
-    root.id = 'scalar-target';
-    container.appendChild(root);
+  // Scalar's own UI (its search box / sidebar) grabs focus for itself
+  // when it mounts. Snapshot whatever currently has focus (e.g. if this
+  // render was triggered by Ctrl+S while still in a field) so we can
+  // hand focus back after Scalar steals it.
+  const activeEl = document.activeElement;
+  const activeElInScalar = activeEl && document.getElementById('scalar-container')?.contains(activeEl);
+  const selStart = (!activeElInScalar && typeof activeEl?.selectionStart === 'number') ? activeEl.selectionStart : null;
+  const selEnd = (!activeElInScalar && typeof activeEl?.selectionEnd === 'number') ? activeEl.selectionEnd : null;
 
-    try {
-      Scalar.createApiReference('#scalar-target', {
-        spec: { content: JSON.parse(JSON.stringify(spec)) },
-        theme: 'kepler',
-        darkMode: true,
-        hideDownloadButton: false,
-        showSidebar: true,
-        customCss: `
-          :root, * {
-            --scalar-border-color: transparent !important;
-            --theme-border-color: transparent !important;
-          }
-          .scalar-card,
-          .scalar-card-content,
-          .scalar-card-section,
-          .scalar-api-reference,
-          .sidebar,
-          aside,
-          .border,
-          .border-b,
-          .border-t,
-          .border-r,
-          .border-l,
-          [class*="border"] {
-            border-color: transparent !important;
-          }
-        `
-      });
-    } catch (err) {
-      container.innerHTML = `<div class="empty-state"><span style="color:var(--danger)">Scalar Error: ${esc(err.message)}</span></div>`;
+  const reclaimFocus = () => {
+    if (!activeEl || activeElInScalar) return;
+    if (!document.body.contains(activeEl)) return;
+    if (document.activeElement === activeEl) return;
+    activeEl.focus();
+    if (selStart !== null && activeEl.setSelectionRange) {
+      try { activeEl.setSelectionRange(selStart, selEnd); } catch (e) {}
     }
-  }, 350);
+  };
+
+  const container = document.getElementById('scalar-container');
+  container.innerHTML = '';
+  const root = document.createElement('div');
+  root.id = 'scalar-target';
+  container.appendChild(root);
+
+  try {
+    Scalar.createApiReference('#scalar-target', {
+      spec: { content: JSON.parse(JSON.stringify(spec)) },
+      theme: 'kepler',
+      darkMode: true,
+      hideDownloadButton: false,
+      showSidebar: true,
+      customCss: `
+        :root, * {
+          --scalar-border-color: transparent !important;
+          --theme-border-color: transparent !important;
+        }
+        .scalar-card,
+        .scalar-card-content,
+        .scalar-card-section,
+        .scalar-api-reference,
+        .sidebar,
+        aside,
+        .border,
+        .border-b,
+        .border-t,
+        .border-r,
+        .border-l,
+        [class*="border"] {
+          border-color: transparent !important;
+        }
+      `
+    });
+  } catch (err) {
+    container.innerHTML = `<div class="empty-state"><span style="color:var(--danger)">Scalar Error: ${esc(err.message)}</span></div>`;
+  }
+
+  // Scalar can finish mounting (and grabbing focus) asynchronously on the
+  // next frame or two, so reclaim focus a few times, not just once.
+  reclaimFocus();
+  requestAnimationFrame(reclaimFocus);
+  setTimeout(reclaimFocus, 60);
+  setTimeout(reclaimFocus, 250);
 }
+
 
 // ════════════════════════════════════════════
 // Import / Export
 // ════════════════════════════════════════════
 
+function openImportModal() {
+  const modal = document.getElementById('importModal');
+  if (!modal) return;
+  const errorEl = document.getElementById('import-error-msg');
+  if (errorEl) errorEl.textContent = '';
+  modal.classList.add('active');
+  const input = document.getElementById('import-paste-input');
+  if (input) {
+    setTimeout(() => input.focus(), 60);
+  }
+}
+
+function closeImportModal() {
+  const modal = document.getElementById('importModal');
+  if (modal) modal.classList.remove('active');
+}
+
+function handleImportModalBackdrop(e) {
+  if (e.target.id === 'importModal') {
+    closeImportModal();
+  }
+}
+
+function triggerFileInput() {
+  const fileInput = document.getElementById('file-input');
+  if (fileInput) fileInput.click();
+}
+
+function clearImportInput() {
+  const input = document.getElementById('import-paste-input');
+  if (input) input.value = '';
+  const errorEl = document.getElementById('import-error-msg');
+  if (errorEl) errorEl.textContent = '';
+}
+
+async function pasteFromClipboardToImport() {
+  const input = document.getElementById('import-paste-input');
+  const errorEl = document.getElementById('import-error-msg');
+  try {
+    const text = await navigator.clipboard.readText();
+    if (text) {
+      input.value = text;
+      if (errorEl) errorEl.textContent = '';
+      toast('Pasted from clipboard!');
+    } else {
+      toast('Clipboard is empty.');
+    }
+  } catch (err) {
+    toast('Clipboard read not permitted: ' + err.message);
+  }
+}
+
+function formatImportJSON() {
+  const input = document.getElementById('import-paste-input');
+  const errorEl = document.getElementById('import-error-msg');
+  const val = input.value.trim();
+  if (!val) return;
+  try {
+    const parsed = JSON.parse(val);
+    input.value = JSON.stringify(parsed, null, 2);
+    if (errorEl) errorEl.textContent = '';
+    toast('JSON formatted!');
+  } catch (e) {
+    try {
+      const parsedYaml = jsyaml.load(val);
+      input.value = JSON.stringify(parsedYaml, null, 2);
+      if (errorEl) errorEl.textContent = '';
+      toast('YAML formatted as JSON!');
+    } catch (yErr) {
+      if (errorEl) errorEl.textContent = '✕ Syntax Error: ' + e.message;
+    }
+  }
+}
+
+function applyImportedSpec(rawText) {
+  const text = (rawText || '').trim();
+  if (!text) {
+    throw new Error('Please paste or select an OpenAPI JSON schema.');
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch (jsonErr) {
+    try {
+      parsed = jsyaml.load(text);
+    } catch (yamlErr) {
+      throw new Error('Could not parse JSON schema: ' + jsonErr.message);
+    }
+  }
+
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error('OpenAPI specification must be a valid JSON object.');
+  }
+
+  spec = parsed;
+  loadSpecIntoUI(spec);
+  renderScalar();
+  markDirty();
+  updateJSONEditor();
+  closeImportModal();
+  toast('Spec imported successfully!');
+}
+
+function handleImportPaste() {
+  const input = document.getElementById('import-paste-input');
+  const errorEl = document.getElementById('import-error-msg');
+  try {
+    if (errorEl) errorEl.textContent = '';
+    applyImportedSpec(input.value);
+  } catch (err) {
+    if (errorEl) errorEl.textContent = '✕ ' + err.message;
+  }
+}
+
 function importSpec() {
-  document.getElementById('file-input').click();
+  openImportModal();
 }
 
 function handleFileImport(e) {
@@ -1842,18 +2115,13 @@ function handleFileImport(e) {
   const reader = new FileReader();
   reader.onload = function(evt) {
     try {
-      let parsed;
-      if (file.name.endsWith('.yaml') || file.name.endsWith('.yml')) {
-        parsed = jsyaml.load(evt.target.result);
-      } else {
-        parsed = JSON.parse(evt.target.result);
-      }
-      spec = parsed;
-      loadSpecIntoUI(spec);
-      renderScalar();
-      markDirty();
-      toast('Spec loaded into Scalar!');
+      const resultText = evt.target.result;
+      applyImportedSpec(resultText);
+      const pasteInput = document.getElementById('import-paste-input');
+      if (pasteInput) pasteInput.value = resultText;
     } catch (err) {
+      const errorEl = document.getElementById('import-error-msg');
+      if (errorEl) errorEl.textContent = '✕ Import error: ' + err.message;
       toast('Import error: ' + err.message);
     }
   };
@@ -1895,11 +2163,13 @@ function loadSpecIntoUI(s) {
 
   // Schemas
   schemas = [];
-  if (s.components?.schemas) {
+  if (s.components?.schemas && typeof s.components.schemas === 'object') {
     Object.entries(s.components.schemas).forEach(([name, sc]) => {
+      if (!sc || typeof sc !== 'object') return;
       const item = { id: ++schemaCounter, name, type: sc.type || 'object', properties: [] };
-      if (sc.properties) {
+      if (sc.properties && typeof sc.properties === 'object') {
         Object.entries(sc.properties).forEach(([pName, pVal]) => {
+          if (!pVal || typeof pVal !== 'object') return;
           let propType = pVal.type || 'string';
           let schemaRef = '';
           let format = pVal.format || '';
@@ -1921,7 +2191,7 @@ function loadSpecIntoUI(s) {
             format: format,
             schemaRef: schemaRef,
             example: example,
-            required: (sc.required || []).includes(pName)
+            required: Array.isArray(sc.required) ? sc.required.includes(pName) : false
           });
         });
       }
@@ -1932,24 +2202,26 @@ function loadSpecIntoUI(s) {
 
   // Paths
   paths = [];
-  if (s.paths) {
+  if (s.paths && typeof s.paths === 'object') {
     Object.entries(s.paths).forEach(([pth, methods]) => {
+      if (!methods || typeof methods !== 'object') return;
       const p = { id: ++pathCounter, path: pth, operations: [] };
       Object.entries(methods).forEach(([method, opData]) => {
         if (!['get','post','put','patch','delete'].includes(method)) return;
+        if (!opData || typeof opData !== 'object') return;
         const op = {
           id: ++opCounter,
           method,
           summary: opData.summary || '',
           operationId: opData.operationId || '',
-          tags: opData.tags || [],
+          tags: Array.isArray(opData.tags) ? opData.tags : [],
           securityScheme: 'none',
-          parameters: (opData.parameters || []).map(pr => ({
+          parameters: (opData.parameters || []).filter(pr => pr && typeof pr === 'object').map(pr => ({
             id: ++paramCounter,
-            name: pr.name,
+            name: pr.name || '',
             in: pr.in || 'query',
-            type: pr.schema?.type || 'string',
-            required: pr.required || false
+            type: pr.schema?.type || pr.type || 'string',
+            required: !!pr.required
           })),
           requestBody: {
             enabled: !!opData.requestBody,
@@ -1973,13 +2245,14 @@ function loadSpecIntoUI(s) {
           op.securityScheme = Object.keys(s.security[0])[0] || 'all';
         }
 
-        if (opData.requestBody?.content) {
+        if (opData.requestBody?.content && typeof opData.requestBody.content === 'object') {
           const ct = Object.keys(opData.requestBody.content)[0];
           op.requestBody.schemaRef = opData.requestBody.content[ct]?.schema?.$ref || '';
         }
 
-        if (opData.responses) {
+        if (opData.responses && typeof opData.responses === 'object') {
           Object.entries(opData.responses).forEach(([code, rData]) => {
+            if (!rData || typeof rData !== 'object') return;
             const r = {
               id: ++responseCounter,
               code,
@@ -1987,7 +2260,7 @@ function loadSpecIntoUI(s) {
               contentType: rData.content ? Object.keys(rData.content)[0] : 'application/json',
               schemaRef: ''
             };
-            if (rData.content) {
+            if (rData.content && typeof rData.content === 'object') {
               const ct = Object.keys(rData.content)[0];
               r.schemaRef = rData.content[ct]?.schema?.$ref || '';
             }
@@ -2050,26 +2323,60 @@ function toast(msg) {
 // Initialize Empty Spec
 // ════════════════════════════════════════════
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   const loaded = loadFromStorage();
   if (!loaded) {
-    renderServers();
-    renderTags();
-    renderSecuritySchemes();
-    renderPaths();
-    renderSchemas();
-    // Open drawer on first fresh visit
-    openDrawer('visual');
+    try {
+      const res = await fetch('/openapi.json');
+      if (res.ok) {
+        const json = await res.json();
+        applyImportedSpec(JSON.stringify(json));
+      }
+    } catch (e) {
+      console.warn('Could not auto-load /openapi.json:', e);
+    }
   }
   buildSpec();
+  renderScalar(); // show the current state immediately, don't wait for a Save
   // The build above just reflects what's already on disk (or a blank
   // slate) — it isn't a real edit, so don't flag it as unsaved.
   hasUnsavedChanges = false;
   updateSaveBadge();
+
+  // Setup drag and drop for pasted import textarea
+  const pasteArea = document.getElementById('import-paste-input');
+  if (pasteArea) {
+    pasteArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      pasteArea.style.borderColor = 'var(--accent)';
+    });
+    pasteArea.addEventListener('dragleave', () => {
+      pasteArea.style.borderColor = 'var(--border)';
+    });
+    pasteArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      pasteArea.style.borderColor = 'var(--border)';
+      const file = e.dataTransfer.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          pasteArea.value = evt.target.result;
+          const errorEl = document.getElementById('import-error-msg');
+          if (errorEl) errorEl.textContent = '';
+        };
+        reader.readAsText(file);
+      }
+    });
+  }
 });
 
-// Ctrl+S / Cmd+S: save to localStorage instead of triggering the browser's save dialog
+// Key bindings:
+// - Ctrl+S / Cmd+S: save to localStorage
+// - Escape: close modal if open
 document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeImportModal();
+  }
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
     e.preventDefault();
     manualSave();

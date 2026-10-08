@@ -32,3 +32,5 @@ coverage.txt
 # Ignore all markdown files except README.md
 *.md
 !README.md
+
+graphify-out

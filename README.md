@@ -5,6 +5,7 @@ A practice RESTful API service for an ecommerce shopping cart system built with 
 ## Overview
 
 This project provides backend API capabilities covering:
+
 - **User Authentication & Management**: Registration, login, session/logout, and profile retrieval.
 - **Product Catalog**: Browsing products and viewing product details.
 - **Shopping Cart Operations**: Adding items, viewing cart contents, updating item quantities, and removing items.
@@ -32,9 +33,22 @@ go get github.com/jackc/pgx/v5
 
 # Password hashing
 go get golang.org/x/crypto/bcrypt
+
+# JWT
+go get github.com/golang-jwt/jwt/v5
+
+# UUID
+go get github.com/google/uuid
+
+# Crypto
+go get golang.org/x/crypto
+
+# ENV
+go get github.com/joho/godotenv
 ```
 
 ### Direct Links
+
 - [validator](https://github.com/go-playground/validator) - Request and payload validation
 - [httprouter](https://github.com/julienschmidt/httprouter) - High performance HTTP request multiplexer
 - [testify](https://github.com/stretchr/testify) - Testing toolkit and assertions
@@ -45,15 +59,37 @@ go get golang.org/x/crypto/bcrypt
 
 ## API Endpoints Summary
 
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/api/users/register` | Register new user |
-| `POST` | `/api/users/login` | Login user |
-| `DELETE` | `/api/users/logout` | Logout user |
-| `GET` | `/api/users/current` | Get current user info |
-| `GET` | `/api/products` | Get list of products |
-| `GET` | `/api/products/:productId` | Get product details |
-| `GET` | `/api/cart` | Get user cart items |
-| `POST` | `/api/cart/items` | Add item to cart |
-| `PUT` | `/api/cart/items/:itemId` | Update cart item quantity |
-| `DELETE` | `/api/cart/items/:itemId` | Remove item from cart |
+### Auth Module
+
+| Method | Endpoint             | Description         |
+| ------ | -------------------- | ------------------- |
+| `POST` | `/api/auth/register` | Register new user   |
+| `POST` | `/api/auth/login`    | Login user          |
+| `POST` | `/api/auth/logout`   | Logout user         |
+
+### Users Module
+
+| Method | Endpoint             | Description         |
+| ------ | -------------------- | ------------------- |
+| `GET`  | `/api/users/current` | Get current user    |
+
+### Products Module
+
+| Method   | Endpoint                   | Description         |
+| -------- | -------------------------- | ------------------- |
+| `GET`    | `/api/products`            | Get list of products|
+| `POST`   | `/api/products`            | Create product      |
+| `GET`    | `/api/products/:productId` | Get product details |
+| `PUT`    | `/api/products/:productId` | Update product      |
+| `DELETE` | `/api/products/:productId` | Delete product      |
+
+### Carts Module
+
+| Method   | Endpoint                  | Description               |
+| -------- | ------------------------- | ------------------------- |
+| `GET`    | `/api/cart`               | Get user cart             |
+| `DELETE` | `/api/cart`               | Clear cart                |
+| `POST`   | `/api/cart/items`         | Add item to cart          |
+| `PUT`    | `/api/cart/items/:itemId` | Update cart item quantity |
+| `DELETE` | `/api/cart/items/:itemId` | Remove item from cart     |
+

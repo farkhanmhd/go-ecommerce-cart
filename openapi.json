@@ -6,12 +6,10 @@
     "description": "Ecommerce Cart System API Spec built with Golang and Postgres"
   },
   "paths": {
-    "/api/users/register": {
+    "/api/auth/register": {
       "post": {
         "summary": "Register user",
-        "tags": [
-          "Users"
-        ],
+        "tags": ["Auth"],
         "requestBody": {
           "required": true,
           "content": {
@@ -56,12 +54,10 @@
         }
       }
     },
-    "/api/users/login": {
+    "/api/auth/login": {
       "post": {
         "summary": "Login User",
-        "tags": [
-          "Users"
-        ],
+        "tags": ["Auth"],
         "requestBody": {
           "required": true,
           "content": {
@@ -106,12 +102,10 @@
         }
       }
     },
-    "/api/users/logout": {
+    "/api/auth/logout": {
       "post": {
         "summary": "Logout",
-        "tags": [
-          "Users"
-        ],
+        "tags": ["Auth"],
         "security": [
           {
             "BearerAuth": []
@@ -134,9 +128,7 @@
     "/api/users/current": {
       "get": {
         "summary": "Get Current User",
-        "tags": [
-          "Users"
-        ],
+        "tags": ["Users"],
         "security": [
           {
             "BearerAuth": []
@@ -179,9 +171,7 @@
     "/api/products": {
       "get": {
         "summary": "Get All Products",
-        "tags": [
-          "Products"
-        ],
+        "tags": ["Products"],
         "responses": {
           "200": {
             "description": "OK",
@@ -207,9 +197,7 @@
       },
       "post": {
         "summary": "Create Product",
-        "tags": [
-          "Products"
-        ],
+        "tags": ["Products"],
         "security": [
           {
             "BearerAuth": []
@@ -262,9 +250,7 @@
     "/api/products/:productId": {
       "get": {
         "summary": "Get Product Detail",
-        "tags": [
-          "Products"
-        ],
+        "tags": ["Products"],
         "parameters": [
           {
             "name": "productId",
@@ -320,9 +306,7 @@
       },
       "put": {
         "summary": "Update Product",
-        "tags": [
-          "Products"
-        ],
+        "tags": ["Products"],
         "security": [
           {
             "BearerAuth": []
@@ -393,9 +377,7 @@
       },
       "delete": {
         "summary": "Delete Product",
-        "tags": [
-          "Products"
-        ],
+        "tags": ["Products"],
         "security": [
           {
             "BearerAuth": []
@@ -458,9 +440,7 @@
     "/api/cart": {
       "get": {
         "summary": "Get Cart Items",
-        "tags": [
-          "Carts"
-        ],
+        "tags": ["Carts"],
         "security": [
           {
             "BearerAuth": []
@@ -501,9 +481,7 @@
       },
       "delete": {
         "summary": "Delete Cart Items",
-        "tags": [
-          "Carts"
-        ],
+        "tags": ["Carts"],
         "security": [
           {
             "BearerAuth": []
@@ -546,9 +524,7 @@
     "/api/cart/items": {
       "post": {
         "summary": "Add new Product to Cart",
-        "tags": [
-          "Carts"
-        ],
+        "tags": ["Carts"],
         "security": [
           {
             "BearerAuth": []
@@ -621,9 +597,7 @@
     "/api/cart/items/:itemId": {
       "put": {
         "summary": "Update Cart Item",
-        "tags": [
-          "Carts"
-        ],
+        "tags": ["Carts"],
         "security": [
           {
             "BearerAuth": []
@@ -704,9 +678,7 @@
       },
       "delete": {
         "summary": "Delete Cart Item",
-        "tags": [
-          "Carts"
-        ],
+        "tags": ["Carts"],
         "security": [
           {
             "BearerAuth": []
@@ -779,10 +751,7 @@
             "type": "number"
           }
         },
-        "required": [
-          "status",
-          "code"
-        ]
+        "required": ["status", "code"]
       },
       "Create User Body": {
         "type": "object",
@@ -797,11 +766,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "name",
-          "email",
-          "password"
-        ]
+        "required": ["name", "email", "password"]
       },
       "Created User Object": {
         "type": "object",
@@ -813,10 +778,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "name",
-          "email"
-        ]
+        "required": ["name", "email"]
       },
       "Created User Response": {
         "type": "object",
@@ -833,16 +795,12 @@
             "$ref": "#/components/schemas/Created User Object"
           }
         },
-        "required": [
-          "status",
-          "code",
-          "data"
-        ]
+        "required": ["status", "code", "data"]
       },
       "Login User Body": {
         "type": "object",
         "properties": {
-          "username": {
+          "email": {
             "type": "string",
             "example": "johndoe"
           },
@@ -851,10 +809,7 @@
             "example": "supersecret"
           }
         },
-        "required": [
-          "username",
-          "password"
-        ]
+        "required": ["email", "password"]
       },
       "User": {
         "type": "object",
@@ -867,13 +822,15 @@
           },
           "email": {
             "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
           }
         },
-        "required": [
-          "id",
-          "name",
-          "email"
-        ]
+        "required": ["id", "name", "email"]
       },
       "Login Success Data": {
         "type": "object",
@@ -885,10 +842,7 @@
             "$ref": "#/components/schemas/User"
           }
         },
-        "required": [
-          "token",
-          "user"
-        ]
+        "required": ["token", "user"]
       },
       "Login Success Response": {
         "type": "object",
@@ -905,11 +859,7 @@
             "$ref": "#/components/schemas/Login Success Data"
           }
         },
-        "required": [
-          "status",
-          "code",
-          "data"
-        ]
+        "required": ["status", "code", "data"]
       },
       "Get User Response": {
         "type": "object",
@@ -926,11 +876,7 @@
             "$ref": "#/components/schemas/User"
           }
         },
-        "required": [
-          "status",
-          "code",
-          "data"
-        ]
+        "required": ["status", "code", "data"]
       },
       "Not Found Error": {
         "type": "object",
@@ -944,10 +890,7 @@
             "example": 404
           }
         },
-        "required": [
-          "status",
-          "code"
-        ]
+        "required": ["status", "code"]
       },
       "Bad Request Error": {
         "type": "object",
@@ -961,10 +904,7 @@
             "example": 400
           }
         },
-        "required": [
-          "status",
-          "code"
-        ]
+        "required": ["status", "code"]
       },
       "Internal Server Error": {
         "type": "object",
@@ -978,10 +918,7 @@
             "example": 500
           }
         },
-        "required": [
-          "status",
-          "code"
-        ]
+        "required": ["status", "code"]
       },
       "Authorization Error": {
         "type": "object",
@@ -995,10 +932,7 @@
             "example": 401
           }
         },
-        "required": [
-          "status",
-          "code"
-        ]
+        "required": ["status", "code"]
       },
       "Product": {
         "type": "object",
@@ -1024,13 +958,7 @@
             "example": 50000
           }
         },
-        "required": [
-          "id",
-          "name",
-          "description",
-          "price",
-          "stock"
-        ]
+        "required": ["id", "name", "description", "price", "stock"]
       },
       "Get Products Response": {
         "type": "object",
@@ -1050,11 +978,7 @@
             }
           }
         },
-        "required": [
-          "status",
-          "code",
-          "data"
-        ]
+        "required": ["status", "code", "data"]
       },
       "Create Product Response": {
         "type": "object",
@@ -1071,11 +995,7 @@
             "$ref": "#/components/schemas/Product"
           }
         },
-        "required": [
-          "status",
-          "code",
-          "data"
-        ]
+        "required": ["status", "code", "data"]
       },
       "General Product Response": {
         "type": "object",
@@ -1092,11 +1012,7 @@
             "$ref": "#/components/schemas/Product"
           }
         },
-        "required": [
-          "status",
-          "code",
-          "data"
-        ]
+        "required": ["status", "code", "data"]
       },
       "Cart Item": {
         "type": "object",
@@ -1144,10 +1060,7 @@
             }
           }
         },
-        "required": [
-          "id",
-          "items"
-        ]
+        "required": ["id", "items"]
       },
       "Get Cart Items Response": {
         "type": "object",
@@ -1164,11 +1077,7 @@
             "$ref": "#/components/schemas/Get Cart Items Data"
           }
         },
-        "required": [
-          "status",
-          "code",
-          "data"
-        ]
+        "required": ["status", "code", "data"]
       },
       "Add Cart Item Body": {
         "type": "object",
@@ -1182,10 +1091,7 @@
             "example": 1
           }
         },
-        "required": [
-          "product_id",
-          "quantity"
-        ]
+        "required": ["product_id", "quantity"]
       },
       "Add Cart Item Response": {
         "type": "object",
@@ -1202,11 +1108,7 @@
             "$ref": "#/components/schemas/Cart Item"
           }
         },
-        "required": [
-          "status",
-          "code",
-          "data"
-        ]
+        "required": ["status", "code", "data"]
       },
       "Update Cart Item Response": {
         "type": "object",
@@ -1223,11 +1125,7 @@
             "$ref": "#/components/schemas/Cart Item"
           }
         },
-        "required": [
-          "status",
-          "code",
-          "data"
-        ]
+        "required": ["status", "code", "data"]
       },
       "Update Cart Item Body": {
         "type": "object",
@@ -1237,9 +1135,7 @@
             "example": 1
           }
         },
-        "required": [
-          "quantity"
-        ]
+        "required": ["quantity"]
       }
     },
     "securitySchemes": {
@@ -1252,11 +1148,15 @@
   },
   "servers": [
     {
-      "url": "https://localhost:3001",
+      "url": "http://localhost:3003",
       "description": "Local Dev"
     }
   ],
   "tags": [
+    {
+      "name": "Auth",
+      "description": "Auth Module"
+    },
     {
       "name": "Users",
       "description": "Users Module"

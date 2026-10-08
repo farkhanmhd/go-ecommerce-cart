@@ -1,0 +1,359 @@
+### Environment Variables
+@baseUrl = http://localhost:3001
+@authToken = {{loginSuccess.response.body.data.token}}
+
+###############################################################################
+# USERS MODULE
+###############################################################################
+
+### 1. Register User - Success
+POST {{baseUrl}}/api/users/register
+Content-Type: application/json
+
+{
+  "name": "John Doe",
+  "email": "johndoe@example.com",
+  "password": "Password123!"
+}
+
+### 2. Register User - Edge Case: Duplicate Email / Already Exists
+POST {{baseUrl}}/api/users/register
+Content-Type: application/json
+
+{
+  "name": "Duplicate User",
+  "email": "johndoe@example.com",
+  "password": "Password123!"
+}
+
+### 3. Register User - Edge Case: Missing Required Fields (Empty Body)
+POST {{baseUrl}}/api/users/register
+Content-Type: application/json
+
+{}
+
+### 4. Register User - Edge Case: Invalid Email Format
+POST {{baseUrl}}/api/users/register
+Content-Type: application/json
+
+{
+  "name": "Invalid Email",
+  "email": "invalid-email-format",
+  "password": "Password123!"
+}
+
+
+### 5. Register User - Edge Case: Malformed JSON (Unquoted value)
+POST {{baseUrl}}/api/users/register
+Content-Type: application/json
+
+{
+  "name": "Malformed JSON",
+  "email": test@example.com
+}
+
+### 6. Login User - Success (Captures token for subsequent requests)
+# @name loginSuccess
+POST {{baseUrl}}/api/users/login
+Content-Type: application/json
+
+{
+  "username": "johndoe@example.com",
+  "password": "Password123!"
+}
+
+### 7. Login User - Edge Case: Incorrect Password
+POST {{baseUrl}}/api/users/login
+Content-Type: application/json
+
+{
+  "username": "johndoe@example.com",
+  "password": "wrong-password"
+}
+
+### 8. Login User - Edge Case: Non-existent User
+POST {{baseUrl}}/api/users/login
+Content-Type: application/json
+
+{
+  "username": "nonexistent_user_99999@example.com",
+  "password": "Password123!"
+}
+
+### 9. Login User - Edge Case: Missing Credentials
+POST {{baseUrl}}/api/users/login
+Content-Type: application/json
+
+{
+  "username": ""
+}
+
+### 10. Get Current User - Success
+GET {{baseUrl}}/api/users/current
+Authorization: Bearer {{authToken}}
+
+### 11. Get Current User - Edge Case: Missing Authorization Header
+GET {{baseUrl}}/api/users/current
+
+### 12. Get Current User - Edge Case: Invalid / Expired Token
+GET {{baseUrl}}/api/users/current
+Authorization: Bearer invalid.token.payload
+
+### 13. Logout - Success
+POST {{baseUrl}}/api/users/logout
+Authorization: Bearer {{authToken}}
+
+### 14. Logout - Edge Case: Missing Authorization Header
+POST {{baseUrl}}/api/users/logout
+
+
+###############################################################################
+# PRODUCTS MODULE
+###############################################################################
+
+### 15. Create Product - Success
+POST {{baseUrl}}/api/products
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Wireless Mouse",
+  "description": "Ergonomic 2.4GHz wireless mouse",
+  "price": 250000,
+  "stock": 100
+}
+
+### 16. Create Product - Edge Case: Missing Authorization Header (401)
+POST {{baseUrl}}/api/products
+Content-Type: application/json
+
+{
+  "name": "Unauthenticated Product",
+  "description": "Should fail",
+  "price": 100000,
+  "stock": 10
+}
+
+### 17. Create Product - Edge Case: Missing Required Fields
+POST {{baseUrl}}/api/products
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Incomplete Product"
+}
+
+### 18. Create Product - Edge Case: Negative Price or Stock
+POST {{baseUrl}}/api/products
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Negative Value Product",
+  "description": "Testing negative numbers",
+  "price": -5000,
+  "stock": -10
+}
+
+### 19. Create Product - Edge Case: Invalid Data Types (string price/stock)
+POST {{baseUrl}}/api/products
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Invalid Types",
+  "description": "Price as string",
+  "price": "not_a_number",
+  "stock": "ten"
+}
+
+### 20. Get All Products - Success
+GET {{baseUrl}}/api/products
+
+### 21. Get Product Detail - Success
+@productId = 1
+GET {{baseUrl}}/api/products/{{productId}}
+
+### 22. Get Product Detail - Edge Case: Not Found (Non-existent ID)
+GET {{baseUrl}}/api/products/99999999
+
+### 23. Get Product Detail - Edge Case: Invalid Path Parameter Type (Alpha string instead of number)
+GET {{baseUrl}}/api/products/abc-invalid-id
+
+### 24. Update Product - Success
+PUT {{baseUrl}}/api/products/{{productId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Wireless Mouse Pro",
+  "description": "Upgraded ergonomic wireless mouse",
+  "price": 300000,
+  "stock": 75
+}
+
+### 25. Update Product - Edge Case: Missing Authorization Header (401)
+PUT {{baseUrl}}/api/products/{{productId}}
+Content-Type: application/json
+
+{
+  "name": "Unauthorized Update",
+  "description": "Should fail",
+  "price": 150000,
+  "stock": 10
+}
+
+### 26. Update Product - Edge Case: Product Not Found (404)
+PUT {{baseUrl}}/api/products/99999999
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Ghost Product",
+  "description": "Does not exist",
+  "price": 150000,
+  "stock": 10
+}
+
+### 27. Update Product - Edge Case: Bad Request / Empty Body
+PUT {{baseUrl}}/api/products/{{productId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{}
+
+### 28. Delete Product - Success
+DELETE {{baseUrl}}/api/products/{{productId}}
+Authorization: Bearer {{authToken}}
+
+### 29. Delete Product - Edge Case: Missing Authorization Header (401)
+DELETE {{baseUrl}}/api/products/{{productId}}
+
+### 30. Delete Product - Edge Case: Product Not Found (404)
+DELETE {{baseUrl}}/api/products/99999999
+Authorization: Bearer {{authToken}}
+
+### 31. Delete Product - Edge Case: Invalid ID in Path Parameter
+DELETE {{baseUrl}}/api/products/invalid_id
+Authorization: Bearer {{authToken}}
+
+
+###############################################################################
+# CARTS MODULE
+###############################################################################
+
+### 32. Get Cart Items - Success
+GET {{baseUrl}}/api/cart
+Authorization: Bearer {{authToken}}
+
+### 33. Get Cart Items - Edge Case: Missing Authorization Header (401)
+GET {{baseUrl}}/api/cart
+
+### 34. Add Product to Cart - Success
+POST {{baseUrl}}/api/cart/items
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "product_id": 1,
+  "quantity": 2
+}
+
+### 35. Add Product to Cart - Edge Case: Missing Authorization Header (401)
+POST {{baseUrl}}/api/cart/items
+Content-Type: application/json
+
+{
+  "product_id": 1,
+  "quantity": 1
+}
+
+### 36. Add Product to Cart - Edge Case: Non-existent Product ID (404)
+POST {{baseUrl}}/api/cart/items
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "product_id": 99999999,
+  "quantity": 1
+}
+
+### 37. Add Product to Cart - Edge Case: Zero or Negative Quantity (400)
+POST {{baseUrl}}/api/cart/items
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "product_id": 1,
+  "quantity": -5
+}
+
+### 38. Add Product to Cart - Edge Case: Missing Required Fields (Empty Body)
+POST {{baseUrl}}/api/cart/items
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{}
+
+### 39. Update Cart Item - Success
+@cartItemId = 1
+PUT {{baseUrl}}/api/cart/items/{{cartItemId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "quantity": 5
+}
+
+### 40. Update Cart Item - Edge Case: Missing Authorization Header (401)
+PUT {{baseUrl}}/api/cart/items/{{cartItemId}}
+Content-Type: application/json
+
+{
+  "quantity": 3
+}
+
+### 41. Update Cart Item - Edge Case: Cart Item Not Found (404)
+PUT {{baseUrl}}/api/cart/items/99999999
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "quantity": 2
+}
+
+### 42. Update Cart Item - Edge Case: Invalid Quantity (Zero / Negative / String)
+PUT {{baseUrl}}/api/cart/items/{{cartItemId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "quantity": -1
+}
+
+### 43. Update Cart Item - Edge Case: Invalid Item ID in Path Parameter
+PUT {{baseUrl}}/api/cart/items/invalid-item-id
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "quantity": 1
+}
+
+### 44. Delete Specific Cart Item - Success
+DELETE {{baseUrl}}/api/cart/items/{{cartItemId}}
+Authorization: Bearer {{authToken}}
+
+### 45. Delete Specific Cart Item - Edge Case: Missing Authorization Header (401)
+DELETE {{baseUrl}}/api/cart/items/{{cartItemId}}
+
+### 46. Delete Specific Cart Item - Edge Case: Item Not Found (404)
+DELETE {{baseUrl}}/api/cart/items/99999999
+Authorization: Bearer {{authToken}}
+
+### 47. Delete All Cart Items (Clear Cart) - Success
+DELETE {{baseUrl}}/api/cart
+Authorization: Bearer {{authToken}}
+
+### 48. Delete All Cart Items - Edge Case: Missing Authorization Header (401)
+DELETE {{baseUrl}}/api/cart
