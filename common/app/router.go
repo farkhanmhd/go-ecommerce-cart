@@ -6,6 +6,7 @@ import (
 	"farkhanmhd/go-ecommerce-cart/common/exceptions"
 	"farkhanmhd/go-ecommerce-cart/common/token"
 	"farkhanmhd/go-ecommerce-cart/modules/auth"
+	"farkhanmhd/go-ecommerce-cart/modules/product"
 	"farkhanmhd/go-ecommerce-cart/modules/user"
 
 	"github.com/go-playground/validator/v10"
@@ -29,6 +30,7 @@ func NewRouter(pool *pgxpool.Pool,
 
 	auth.NewAuthController(router, pool, validate, signer)
 	user.NewUserController(router, pool, validate, signer)
+	product.NewProductController(router, pool, validate, signer)
 
 	router.PanicHandler = exceptions.ErrorHandler
 

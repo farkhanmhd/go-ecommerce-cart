@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"farkhanmhd/go-ecommerce-cart/common/entity"
+	"farkhanmhd/go-ecommerce-cart/common/exceptions"
 	common_model "farkhanmhd/go-ecommerce-cart/common/model"
 	"farkhanmhd/go-ecommerce-cart/common/token"
 	"farkhanmhd/go-ecommerce-cart/common/utils"
@@ -8,6 +10,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -15,6 +18,7 @@ type AuthHandler interface {
 	Register(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 	Login(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 	Logout(w http.ResponseWriter, r *http.Request, p httprouter.Params)
+	Refresh(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 }
 
 type AuthHandlerImpl struct {
@@ -75,8 +79,20 @@ func (u *AuthHandlerImpl) Login(w http.ResponseWriter, r *http.Request, p httpro
 	userAgent := r.UserAgent()
 
 	ipAddress, _, _ := net.SplitHostPort(r.RemoteAddr)
+	sessionId := uuid.New().String()
 
-	result := u.AuthService.Login(r.Context(), loginBody, userAgent, ipAddress)
+	result := u.AuthService.Login(r.Context(), loginBody, userAgent, ipAddress, sessionId)
+
+	accessToken, err := u.Signer.Sign(entity.User{
+		Id:        result.User.Id,
+		Name:      result.User.Name,
+		Email:     result.User.Email,
+		CreatedAt: result.User.CreatedAt,
+		UpdatedAt: result.User.UpdatedAt,
+	}, sessionId)
+
+	utils.PanicIfError(err)
+
 	u.setRefreshCookie(w, result.RefreshToken)
 	utils.WriteJSONResponse(w, common_model.ResponseWithData{
 		Response: common_model.Response{
@@ -84,7 +100,7 @@ func (u *AuthHandlerImpl) Login(w http.ResponseWriter, r *http.Request, p httpro
 			Code:   http.StatusOK,
 		},
 		Data: LoginResponse{
-			AccessToken: result.AccessToken,
+			AccessToken: accessToken,
 			User: LoginUserResult{
 				Id:        result.User.Id,
 				Name:      result.User.Name,
@@ -105,5 +121,38 @@ func (u *AuthHandlerImpl) Logout(w http.ResponseWriter, r *http.Request, p httpr
 	utils.WriteJSONResponse(w, common_model.Response{
 		Status: "OK",
 		Code:   http.StatusOK,
+	})
+}
+
+func (u *AuthHandlerImpl) Refresh(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	cookie, err := r.Cookie(REFRESH_COOKIE_NAME)
+	if err != nil {
+		panic(exceptions.NewAuthorizationError(exceptions.SessionExpiredMessage))
+	}
+	user := u.AuthService.Refresh(r.Context(), cookie.Value)
+
+	accessToken, err := u.Signer.Sign(entity.User{
+		Id:        user.Id,
+		Name:      user.Name,
+		Email:     user.Email,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+	}, cookie.Value)
+
+	utils.WriteJSONResponse(w, common_model.ResponseWithData{
+		Response: common_model.Response{
+			Status: "OK",
+			Code:   http.StatusOK,
+		},
+		Data: LoginResponse{
+			AccessToken: accessToken,
+			User: LoginUserResult{
+				Id:        user.Id,
+				Name:      user.Name,
+				Email:     user.Email,
+				CreatedAt: user.CreatedAt,
+				UpdatedAt: user.UpdatedAt,
+			},
+		},
 	})
 }

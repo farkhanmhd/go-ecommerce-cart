@@ -2,10 +2,10 @@ package auth
 
 import (
 	"context"
-	"farkhanmhd/go-ecommerce-cart/common/entity"
 	"farkhanmhd/go-ecommerce-cart/common/exceptions"
 	"farkhanmhd/go-ecommerce-cart/common/token"
 	"farkhanmhd/go-ecommerce-cart/common/utils"
+	"fmt"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -15,8 +15,9 @@ import (
 
 type AuthService interface {
 	Register(ctx context.Context, requestBody RegisterUserBody)
-	Login(ctx context.Context, requestBody LoginBody, userAgent string, ipAddress string) LoginResult
+	Login(ctx context.Context, requestBody LoginBody, userAgent string, ipAddress string, sessionId string) LoginServiceResult
 	Logout(ctx context.Context, refreshToken string)
+	Refresh(ctx context.Context, refreshToken string) User
 }
 
 type AuthServiceImpl struct {
@@ -53,7 +54,7 @@ func (u *AuthServiceImpl) Register(ctx context.Context, requestBody RegisterUser
 	u.AuthRepository.Register(ctx, tx, body)
 }
 
-func (u *AuthServiceImpl) Login(ctx context.Context, requestBody LoginBody, userAgent string, ipAddress string) LoginResult {
+func (u *AuthServiceImpl) Login(ctx context.Context, requestBody LoginBody, userAgent string, ipAddress string, sessionId string) LoginServiceResult {
 	err := u.Validate.Struct(requestBody)
 	utils.PanicIfError(err)
 
@@ -74,7 +75,7 @@ func (u *AuthServiceImpl) Login(ctx context.Context, requestBody LoginBody, user
 	}
 
 	rawRefreshToken := uuid.New().String()
-	sessionId := uuid.New().String()
+
 	hashToken := token.HashToken(rawRefreshToken)
 	device := userAgent
 
@@ -94,18 +95,7 @@ func (u *AuthServiceImpl) Login(ctx context.Context, requestBody LoginBody, user
 
 	u.AuthRepository.CreateSession(ctx, tx, session)
 
-	accessToken, err := u.Signer.Sign(entity.User{
-		Id:        userResult.Id,
-		Name:      userResult.Name,
-		Email:     userResult.Email,
-		CreatedAt: userResult.CreatedAt,
-		UpdatedAt: userResult.UpdatedAt,
-	}, sessionId)
-
-	utils.PanicIfError(err)
-
-	return LoginResult{
-		AccessToken:  accessToken,
+	return LoginServiceResult{
 		RefreshToken: rawRefreshToken,
 		User:         userResult,
 	}
@@ -125,4 +115,36 @@ func (u *AuthServiceImpl) Logout(ctx context.Context, refreshToken string) {
 	tokenHash := token.HashToken(refreshToken)
 	session := u.AuthRepository.FindSessionByTokenHash(ctx, tx, tokenHash)
 	u.AuthRepository.RevokeSession(ctx, tx, session)
+}
+
+func (u *AuthServiceImpl) Refresh(ctx context.Context, refreshToken string) User {
+	if len(refreshToken) == 0 {
+		panic(exceptions.NewAuthorizationError("Invalid Token"))
+	}
+
+	tx, err := u.Pool.Begin(ctx)
+	defer utils.CommitOrRollback(ctx, tx)
+
+	if err != nil {
+		panic(err)
+	}
+
+	tokenHash := token.HashToken(refreshToken)
+	session := u.AuthRepository.FindSessionByTokenHash(ctx, tx, tokenHash)
+
+	if session.ExpiresAt.Before(time.Now()) {
+		u.AuthRepository.RevokeSession(ctx, tx, session)
+		panic(exceptions.NewAuthorizationError("Session Expired"))
+	}
+
+	u.AuthRepository.UpdateLastActive(ctx, tx, session)
+
+	user, err := u.AuthRepository.FindById(ctx, tx, session.UserId)
+
+	if err != nil {
+		fmt.Println("Error here at find by id")
+		panic(exceptions.NewAuthorizationError(exceptions.SessionExpiredMessage))
+	}
+
+	return user
 }

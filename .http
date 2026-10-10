@@ -1,13 +1,12 @@
-### Environment Variables
-@baseUrl = http://localhost:3001
-@authToken = {{loginSuccess.response.body.data.token}}
+# Environment Variables
+@baseUrl = http://localhost:3003
 
 ###############################################################################
 # USERS MODULE
 ###############################################################################
 
 ### 1. Register User - Success
-POST {{baseUrl}}/api/users/register
+POST {{baseUrl}}/api/auth/register
 Content-Type: application/json
 
 {
@@ -17,7 +16,7 @@ Content-Type: application/json
 }
 
 ### 2. Register User - Edge Case: Duplicate Email / Already Exists
-POST {{baseUrl}}/api/users/register
+POST {{baseUrl}}/api/auth/register
 Content-Type: application/json
 
 {
@@ -27,13 +26,13 @@ Content-Type: application/json
 }
 
 ### 3. Register User - Edge Case: Missing Required Fields (Empty Body)
-POST {{baseUrl}}/api/users/register
+POST {{baseUrl}}/api/auth/register
 Content-Type: application/json
 
 {}
 
 ### 4. Register User - Edge Case: Invalid Email Format
-POST {{baseUrl}}/api/users/register
+POST {{baseUrl}}/api/auth/register
 Content-Type: application/json
 
 {
@@ -44,7 +43,7 @@ Content-Type: application/json
 
 
 ### 5. Register User - Edge Case: Malformed JSON (Unquoted value)
-POST {{baseUrl}}/api/users/register
+POST {{baseUrl}}/api/auth/register
 Content-Type: application/json
 
 {
@@ -54,16 +53,19 @@ Content-Type: application/json
 
 ### 6. Login User - Success (Captures token for subsequent requests)
 # @name loginSuccess
-POST {{baseUrl}}/api/users/login
+POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
 {
-  "username": "johndoe@example.com",
-  "password": "Password123!"
+  "email": "developer@test.com",
+  "password": "developer"
 }
 
+?? status == 200
+@authToken = {{loginSuccess.data.access_token}}
+
 ### 7. Login User - Edge Case: Incorrect Password
-POST {{baseUrl}}/api/users/login
+POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
 {
@@ -72,7 +74,7 @@ Content-Type: application/json
 }
 
 ### 8. Login User - Edge Case: Non-existent User
-POST {{baseUrl}}/api/users/login
+POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
 {
@@ -81,12 +83,20 @@ Content-Type: application/json
 }
 
 ### 9. Login User - Edge Case: Missing Credentials
-POST {{baseUrl}}/api/users/login
+POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
 {
   "username": ""
 }
+
+### 13. Logout - Success
+POST {{baseUrl}}/api/users/logout
+Authorization: Bearer {{authToken}}
+
+### 14. Logout - Edge Case: Missing Authorization Header
+POST {{baseUrl}}/api/users/logout
+
 
 ### 10. Get Current User - Success
 GET {{baseUrl}}/api/users/current
@@ -98,13 +108,6 @@ GET {{baseUrl}}/api/users/current
 ### 12. Get Current User - Edge Case: Invalid / Expired Token
 GET {{baseUrl}}/api/users/current
 Authorization: Bearer invalid.token.payload
-
-### 13. Logout - Success
-POST {{baseUrl}}/api/users/logout
-Authorization: Bearer {{authToken}}
-
-### 14. Logout - Edge Case: Missing Authorization Header
-POST {{baseUrl}}/api/users/logout
 
 
 ###############################################################################
@@ -171,7 +174,7 @@ Content-Type: application/json
 GET {{baseUrl}}/api/products
 
 ### 21. Get Product Detail - Success
-@productId = 1
+@productId = 88add3ba-a4ef-4de0-b920-5db6c42b8bfa
 GET {{baseUrl}}/api/products/{{productId}}
 
 ### 22. Get Product Detail - Edge Case: Not Found (Non-existent ID)
@@ -181,8 +184,8 @@ GET {{baseUrl}}/api/products/99999999
 GET {{baseUrl}}/api/products/abc-invalid-id
 
 ### 24. Update Product - Success
-PUT {{baseUrl}}/api/products/{{productId}}
-Authorization: Bearer {{authToken}}
+PUT {{baseUrl}}/api/products/88add3ba-a4ef-4de0-b920-5db6c42b8bfa
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiZGV2ZWxvcGVyIiwidXNlcl9pZCI6IjEwZGUzMTM2LWMwOTAtNGVlZS1hN2I3LWViNWQ3MDA5OTdmZSIsInNlc3Npb25faWQiOiJjNTY2ZmUzZi1hNTgwLTQ5ODctODk4OC1lNTEzY2YzOWQ2MmIiLCJlbWFpbCI6ImRldmVsb3BlckB0ZXN0LmNvbSIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6MzAwMyIsInN1YiI6IjEwZGUzMTM2LWMwOTAtNGVlZS1hN2I3LWViNWQ3MDA5OTdmZSIsImF1ZCI6WyJodHRwOi8vbG9jYWxob3N0OjMwMDMiXSwiZXhwIjoxNzkxNjM0MTY2LCJpYXQiOjE3OTE2MzMyNjYsImp0aSI6IjU3ZTc4N2E0LTkzMjktNGFlZC1hMDM2LWY5M2U1N2Y2ODg2MSJ9.dZUKzsixW8LixwTcZ8qz9OZio-KxwzTM268j3UXTJTI
 Content-Type: application/json
 
 {
@@ -223,8 +226,8 @@ Content-Type: application/json
 {}
 
 ### 28. Delete Product - Success
-DELETE {{baseUrl}}/api/products/{{productId}}
-Authorization: Bearer {{authToken}}
+DELETE {{baseUrl}}/api/products/88add3ba-a4ef-4de0-b920-5db6c42b8bfa
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiZGV2ZWxvcGVyIiwidXNlcl9pZCI6IjEwZGUzMTM2LWMwOTAtNGVlZS1hN2I3LWViNWQ3MDA5OTdmZSIsInNlc3Npb25faWQiOiJjNTY2ZmUzZi1hNTgwLTQ5ODctODk4OC1lNTEzY2YzOWQ2MmIiLCJlbWFpbCI6ImRldmVsb3BlckB0ZXN0LmNvbSIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6MzAwMyIsInN1YiI6IjEwZGUzMTM2LWMwOTAtNGVlZS1hN2I3LWViNWQ3MDA5OTdmZSIsImF1ZCI6WyJodHRwOi8vbG9jYWxob3N0OjMwMDMiXSwiZXhwIjoxNzkxNjM0MTY2LCJpYXQiOjE3OTE2MzMyNjYsImp0aSI6IjU3ZTc4N2E0LTkzMjktNGFlZC1hMDM2LWY5M2U1N2Y2ODg2MSJ9.dZUKzsixW8LixwTcZ8qz9OZio-KxwzTM268j3UXTJTI
 
 ### 29. Delete Product - Edge Case: Missing Authorization Header (401)
 DELETE {{baseUrl}}/api/products/{{productId}}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"farkhanmhd/go-ecommerce-cart/common/exceptions"
 	"farkhanmhd/go-ecommerce-cart/common/utils"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -15,15 +16,16 @@ type AuthRepository interface {
 	CreateSession(ctx context.Context, tx pgx.Tx, session Session)
 	FindSessionByTokenHash(ctx context.Context, tx pgx.Tx, tokenHash string) Session
 	RevokeSession(ctx context.Context, tx pgx.Tx, session Session)
+	UpdateLastActive(ctx context.Context, tx pgx.Tx, session Session)
 }
 
 type AuthRepositoryImpl struct{}
 
 // FindById implements [UserRepository].
 func (u *AuthRepositoryImpl) FindById(ctx context.Context, tx pgx.Tx, userId string) (User, error) {
-	query := "select id, name, email, passowrd, created_at, updated_at from users where id = $1 limit 1"
+	query := "select id, name, email, password, created_at, updated_at from users where id = $1 limit 1"
 	user := User{}
-	err := tx.QueryRow(ctx, query, userId).Scan(&user.Id, &user.Name, &user.Email, &user.Email, &user.CreatedAt, &user.UpdatedAt)
+	err := tx.QueryRow(ctx, query, userId).Scan(&user.Id, &user.Name, &user.Email, &user.Password, &user.CreatedAt, &user.UpdatedAt)
 
 	if err != nil {
 		return User{}, err
@@ -60,12 +62,12 @@ func (u *AuthRepositoryImpl) CreateSession(ctx context.Context, tx pgx.Tx, sessi
 }
 
 func (u *AuthRepositoryImpl) FindSessionByTokenHash(ctx context.Context, tx pgx.Tx, tokenHash string) Session {
-	query := "select id, user_id from sessions where refresh_token_hash = $1 limit 1"
+	query := "select id, user_id, expires_at from sessions where refresh_token_hash = $1 limit 1"
 	session := Session{}
-	err := tx.QueryRow(ctx, query, tokenHash).Scan(&session.Id, &session.UserId)
+	err := tx.QueryRow(ctx, query, tokenHash).Scan(&session.Id, &session.UserId, &session.ExpiresAt)
 
 	if err != nil {
-		panic(exceptions.NewNotFoundError("NOT FOUND"))
+		panic(exceptions.NewAuthorizationError("Invalid or Expired Token"))
 	}
 
 	return session
@@ -78,6 +80,12 @@ func (u *AuthRepositoryImpl) RevokeSession(ctx context.Context, tx pgx.Tx, sessi
 	if err != nil {
 		panic(err)
 	}
+}
+
+func (u *AuthRepositoryImpl) UpdateLastActive(ctx context.Context, tx pgx.Tx, session Session) {
+	query := "update sessions set last_active_at = $1 where id = $2"
+	_, err := tx.Exec(ctx, query, time.Now(), session.Id)
+	utils.PanicIfError(err)
 }
 
 func NewAuthRepository() AuthRepository {

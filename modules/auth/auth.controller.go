@@ -23,4 +23,5 @@ func NewAuthController(
 	router.POST("/api/auth/register", authHandler.Register)
 	router.POST("/api/auth/login", authHandler.Login)
 	router.POST("/api/auth/logout", authMiddleware.Protect(authHandler.Logout))
+	router.POST("/api/auth/refresh", authHandler.Refresh)
 }

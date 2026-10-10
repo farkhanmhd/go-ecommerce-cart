@@ -59,8 +59,7 @@ type LoginBody struct {
 	Password string `validate:"required,max=200,min=1" json:"password"`
 }
 
-type LoginResult struct {
-	AccessToken  string
+type LoginServiceResult struct {
 	RefreshToken string
 	User         User
 }

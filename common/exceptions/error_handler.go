@@ -74,6 +74,8 @@ type AuthorizationError struct {
 	Error string
 }
 
+const SessionExpiredMessage = "Session Expired"
+
 func NewAuthorizationError(error string) AuthorizationError {
 	return AuthorizationError{Error: error}
 }
