@@ -3,7 +3,6 @@ package product
 import (
 	"context"
 	"farkhanmhd/go-ecommerce-cart/common/utils"
-	"fmt"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -19,6 +18,7 @@ type ProductService interface {
 
 type ProductServiceImpl struct {
 	ProductRepository ProductRepository
+	Validate          *validator.Validate
 	Pool              *pgxpool.Pool
 }
 
@@ -26,6 +26,7 @@ func NewProductService(ProductRepository ProductRepository, pool *pgxpool.Pool, 
 	return &ProductServiceImpl{
 		ProductRepository: ProductRepository,
 		Pool:              pool,
+		Validate:          validate,
 	}
 }
 
@@ -38,6 +39,8 @@ func (p *ProductServiceImpl) FindById(ctx context.Context, ProductId string) Pro
 }
 
 func (p *ProductServiceImpl) Create(ctx context.Context, product Product) Product {
+	err := p.Validate.Struct(product)
+	utils.PanicIfError(err)
 	tx, err := p.Pool.Begin(ctx)
 	utils.PanicIfError(err)
 	defer utils.CommitOrRollback(ctx, tx)
@@ -54,10 +57,11 @@ func (p *ProductServiceImpl) FindAll(ctx context.Context) []Product {
 }
 
 func (p *ProductServiceImpl) Update(ctx context.Context, product Product) {
+	err := p.Validate.Struct(product)
+	utils.PanicIfError(err)
 	tx, err := p.Pool.Begin(ctx)
 	utils.PanicIfError(err)
 	defer utils.CommitOrRollback(ctx, tx)
-	fmt.Println(product)
 	p.ProductRepository.FindById(ctx, tx, product.Id)
 	p.ProductRepository.Update(ctx, tx, product)
 }

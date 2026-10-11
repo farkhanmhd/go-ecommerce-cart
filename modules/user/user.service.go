@@ -2,10 +2,8 @@ package user
 
 import (
 	"context"
-	"farkhanmhd/go-ecommerce-cart/common/token"
 	"farkhanmhd/go-ecommerce-cart/common/utils"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -18,7 +16,7 @@ type UserServiceImpl struct {
 	Pool           *pgxpool.Pool
 }
 
-func NewUserService(userRepository UserRepository, pool *pgxpool.Pool, validate *validator.Validate, signer *token.TokenSigner) UserService {
+func NewUserService(userRepository UserRepository, pool *pgxpool.Pool) UserService {
 	return &UserServiceImpl{
 		UserRepository: userRepository,
 		Pool:           pool,

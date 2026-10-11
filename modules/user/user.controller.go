@@ -17,7 +17,7 @@ func NewUserController(
 ) {
 	authMiddleware := middleware.NewAuthMiddleware(signer)
 	userRepository := NewUserRepository()
-	userService := NewUserService(userRepository, pool, validate, signer)
+	userService := NewUserService(userRepository, pool)
 	userHandler := NewUserHandler(userService)
 
 	router.GET("/api/users/current", authMiddleware.Protect(userHandler.FindById))

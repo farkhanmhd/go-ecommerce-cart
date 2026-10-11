@@ -74,6 +74,10 @@ type AuthorizationError struct {
 	Error string
 }
 
+type BadRequestError struct {
+	Error string
+}
+
 const SessionExpiredMessage = "Session Expired"
 
 func NewAuthorizationError(error string) AuthorizationError {
@@ -101,6 +105,31 @@ func authorizationError(w http.ResponseWriter, _ *http.Request, err any) bool {
 	return false
 }
 
+func NewBadRequestError(error string) BadRequestError {
+	return BadRequestError{Error: error}
+}
+
+func badRequestError(w http.ResponseWriter, _ *http.Request, err any) bool {
+	exception, ok := err.(AuthorizationError)
+
+	if ok {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+
+		response := common_model.ResponseWithData{
+			Data: exception.Error,
+		}
+
+		response.Code = http.StatusBadRequest
+		response.Status = "BAD REQUEST"
+
+		utils.WriteJSONResponse(w, response)
+		return true
+	}
+
+	return false
+}
+
 func ErrorHandler(w http.ResponseWriter, r *http.Request, err any) {
 	if validationError(w, r, err) {
 		return
@@ -111,6 +140,10 @@ func ErrorHandler(w http.ResponseWriter, r *http.Request, err any) {
 	}
 
 	if authorizationError(w, r, err) {
+		return
+	}
+
+	if badRequestError(w, r, err) {
 		return
 	}
 
