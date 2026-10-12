@@ -21,7 +21,11 @@ func NewCartController(
 	ProductRepository := product.NewProductRepository()
 	ProductService := product.NewProductService(ProductRepository, pool, validate)
 	CartService := NewCartService(CartRepository, pool, validate, ProductService)
-	CartNewCartHandler := NewCartHandler(CartService)
+	CartHandler := NewCartHandler(CartService)
 
-	router.POST("/api/cart/items", authMiddleware.Protect(CartNewCartHandler.AddItem))
+	router.GET("/api/cart", authMiddleware.Protect(CartHandler.GetCart))
+	router.DELETE("/api/cart", authMiddleware.Protect(CartHandler.ClearCart))
+	router.POST("/api/cart/items", authMiddleware.Protect(CartHandler.AddItem))
+	router.PUT("/api/cart/items/:itemId", authMiddleware.Protect(CartHandler.UpdateItem))
+	router.DELETE("/api/cart/items/:itemId", authMiddleware.Protect(CartHandler.RemoveItem))
 }

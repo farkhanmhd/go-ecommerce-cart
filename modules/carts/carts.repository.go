@@ -45,7 +45,7 @@ func (c *CartRepositoryImpl) FindAllItems(ctx context.Context, tx pgx.Tx, cartId
 
 	for rows.Next() {
 		var cartItem CartItem
-		rows.Scan(cartItems, rows.Scan(&cartItem.Id, &cartItem.CartId, &cartItem.ProductId, &cartItem.Quantity, &cartItem.CreatedAt))
+		rows.Scan(&cartItem.Id, &cartItem.CartId, &cartItem.ProductId, &cartItem.Quantity, &cartItem.CreatedAt)
 		cartItems = append(cartItems, cartItem)
 	}
 
@@ -75,7 +75,7 @@ func (c *CartRepositoryImpl) FindItemByCartAndProduct(ctx context.Context, tx pg
 
 // FindItemById implements [CartRepository].
 func (c *CartRepositoryImpl) FindItemById(ctx context.Context, tx pgx.Tx, itemId string) (CartItem, error) {
-	query := "select id, cart_id, product_id, quantity, created_at from cart_items where id = $1 returning id, cart_id, product_id, quantity, created_at"
+	query := "select id, cart_id, product_id, quantity, created_at from cart_items where id = $1"
 	var cartItem CartItem
 	err := tx.QueryRow(ctx, query, itemId).Scan(&cartItem.Id, &cartItem.CartId, &cartItem.ProductId, &cartItem.Quantity, &cartItem.CreatedAt)
 	return cartItem, err
@@ -122,14 +122,12 @@ func (c *CartRepositoryImpl) SaveItem(ctx context.Context, tx pgx.Tx, cartItem C
 // UpdateItem implements [CartRepository].
 func (c *CartRepositoryImpl) UpdateItem(ctx context.Context, tx pgx.Tx, cartItem CartItem) CartItem {
 	query := `update cart_items set
-		cart_id = $1,
-		product_id = $2,
-		quantity = $3
-	where id = $4
+		quantity = $1
+	where id = $2 and cart_id = $3
 	returning id, cart_id, product_id, quantity, created_at`
 
 	var updatedCartItem CartItem
-	err := tx.QueryRow(ctx, query, cartItem.CartId, cartItem.ProductId, cartItem.Quantity, cartItem.Id).Scan(&updatedCartItem.Id, &updatedCartItem.CartId, &updatedCartItem.ProductId, &updatedCartItem.Quantity, &updatedCartItem.CreatedAt)
+	err := tx.QueryRow(ctx, query, cartItem.Quantity, cartItem.Id, cartItem.CartId).Scan(&updatedCartItem.Id, &updatedCartItem.CartId, &updatedCartItem.ProductId, &updatedCartItem.Quantity, &updatedCartItem.CreatedAt)
 	utils.PanicIfError(err)
 	return updatedCartItem
 }
